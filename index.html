@@ -1,0 +1,2897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Centro de Operaciones de Cierre Financiero – RTR México y SCAC </title>
+<!-- SheetJS: leer archivos Excel en el navegador sin servidor -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:#f4f6f9;font-family:-apple-system,"Segoe UI",system-ui,sans-serif;font-size:14px;color:#1f2328;padding:20px;line-height:1.6}
+
+.header{background:#003366;color:white;padding:18px 24px;border-radius:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.header h1{font-size:20px;font-weight:700}
+.header p{font-size:12px;color:#a8c4e0;margin-top:2px}
+.header-right{font-size:12px;color:#a8c4e0;text-align:right}
+
+.file-status{font-size:12px;padding:6px 12px;border-radius:6px;background:#f0fff4;color:#1a7a35;border:1px solid #b7e4c7;display:none}
+.file-status.error{background:#fff5f5;color:#b02a37;border-color:#f5c2c7}
+
+.filters{background:white;padding:12px 16px;border-radius:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;border:1px solid #e5e7eb}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:11px;color:#57606a;font-weight:600}
+select{padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;min-width:160px;font-size:12px;color:#1f2328;background:#f7f8fa}
+select:focus{outline:2px solid #3b82d4;border-color:#3b82d4;background:white}
+.btn{background:#003366;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap}
+.btn:hover{background:#004d99}
+.btn-out{background:white;color:#003366;border:1px solid #003366}
+.btn-out:hover{background:#eef3fa}
+.search-box{padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:12px;min-width:180px;color:#1f2328;background:#f7f8fa}
+.search-box:focus{outline:2px solid #3b82d4;background:white}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.card{background:white;padding:14px 16px;border-radius:10px;border:1px solid #e5e7eb;border-left-width:5px}
+.kpi-num{font-size:30px;font-weight:700;line-height:1.1;margin-bottom:2px}
+.kpi-lbl{font-size:11px;color:#57606a;font-weight:500}
+.kpi-pct{font-size:10px;color:#57606a;margin-top:1px}
+.c-tot{border-left-color:#3b82d4}.c-tot .kpi-num{color:#3b82d4}
+.c-comp{border-left-color:#28a745}.c-comp .kpi-num{color:#28a745}
+.c-proc{border-left-color:#ffc107}.c-proc .kpi-num{color:#e6a800}
+.c-ns{border-left-color:#dc3545}.c-ns .kpi-num{color:#dc3545}
+.c-na{border-left-color:#6c757d}.c-na .kpi-num{color:#6c757d}
+
+.section{background:white;padding:16px 18px;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:16px}
+.section h3{font-size:13px;font-weight:700;margin-bottom:10px}
+.prog-bar{width:100%;background:#e5e7eb;border-radius:30px;overflow:hidden;height:22px}
+.prog{height:100%;background:#28a745;text-align:center;color:white;font-weight:700;font-size:12px;line-height:22px;min-width:32px;transition:width .5s;border-radius:30px}
+.prog-meta{display:flex;justify-content:space-between;font-size:11px;color:#57606a;margin-top:5px}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+
+.area-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.area-name{width:210px;font-size:11px;color:#57606a;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.area-bar-w{flex:1;background:#e5e7eb;border-radius:20px;height:14px;overflow:hidden}
+.area-bar{height:100%;background:#3b82d4;border-radius:20px}
+.area-pct{width:34px;font-size:11px;font-weight:700;text-align:right;color:#1f2328;flex-shrink:0}
+.resp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.resp-name{width:140px;font-size:11px;color:#57606a;flex-shrink:0}
+.resp-bar-w{flex:1;background:#e5e7eb;border-radius:20px;height:14px;overflow:hidden}
+.resp-bar{height:100%;background:#7c5cd8;border-radius:20px}
+.resp-pct{width:34px;font-size:11px;font-weight:700;text-align:right;color:#1f2328;flex-shrink:0}
+
+.table-container{background:white;padding:16px 18px;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:16px;overflow-x:auto}
+.tbl-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.tbl-hdr h3{font-size:13px;font-weight:700}
+.tbl-pagination{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;justify-content:center}
+.tbl-pagination button{padding:4px 10px;border:1px solid #d0d7de;border-radius:6px;background:white;font-size:11px;cursor:pointer;color:#1f2328;min-width:32px}
+.tbl-pagination button:hover:not(:disabled){background:#eef3fa;border-color:#3b82d4;color:#3b82d4}
+.tbl-pagination button:disabled{opacity:.4;cursor:default}
+.tbl-pagination button.active{background:#003366;color:white;border-color:#003366;font-weight:700}
+.tbl-pagination .pg-info{font-size:11px;color:#57606a;padding:0 4px}
+.tbl-pagination select{padding:3px 6px;border:1px solid #d0d7de;border-radius:6px;font-size:11px;color:#1f2328;background:#f7f8fa}
+.res-cnt{font-size:11px;color:#57606a}
+/* table-layout:fixed + colgroup controlan los anchos; overflow-x:auto en .table-container maneja pantallas pequeñas */
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;min-width:960px}
+thead{background:#003366;color:white}
+th{padding:7px 8px;text-align:center;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td{padding:7px 8px;border-bottom:1px solid #f0f2f5;vertical-align:middle;overflow:hidden;text-align:center}
+td.td-est,td.td-tipo{overflow:visible;white-space:nowrap}
+td.td-act,td.td-area{overflow:visible;white-space:normal;word-break:break-word;text-align:center}
+tbody tr:hover{background:#f7f8fa}
+tbody tr:last-child td{border-bottom:none}
+.act-name{width:100%;white-space:normal;word-break:break-word;text-transform:none;display:block;text-align:center}
+.com-input{width:100%;padding:4px 6px;border:1px solid transparent;border-radius:6px;font-size:11px;font-family:inherit;color:#1f2328;background:transparent;resize:none;line-height:1.5;overflow:hidden;height:28px;transition:border-color .15s,background .15s;box-sizing:border-box}
+.com-input:hover{border-color:#d0d7de;background:#f7f8fa}
+.com-input:focus{outline:none;border-color:#3b82d4;background:#fff;height:auto;min-height:28px}
+.com-input::placeholder{color:#adb5bd}
+.est-select{border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;text-align:center;width:100%;min-width:110px;box-sizing:border-box;white-space:nowrap}
+.est-select.s-comp{background:#28a745;color:white}
+.est-select.s-proc{background:#ffc107;color:#333}
+.est-select.s-ns{background:#dc3545;color:white}
+.est-select.s-na{background:#6c757d;color:white}
+.est-select:focus{box-shadow:0 0 0 2px rgba(59,130,212,.4)}
+.tipo-select{border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;text-align:center;width:100%;min-width:110px;box-sizing:border-box;white-space:nowrap}
+.tipo-select.t-cierre{background:#0d6efd;color:white}
+.tipo-select.t-poscierre{background:#6f42c1;color:white}
+.tipo-select.t-none{background:#e5e7eb;color:#57606a}
+.tipo-select:focus{box-shadow:0 0 0 2px rgba(59,130,212,.4)}
+.b-cierre{background:#0d6efd;color:white}
+.b-poscierre{background:#6f42c1;color:white}
+.leader-comments{background:white;padding:16px 18px;border-radius:10px;border:1px solid #e5e7eb}
+.leader-comments h3{font-size:13px;font-weight:700;margin-bottom:12px;color:#1f2328}
+.leader-comments-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.leader-comments-grid{grid-template-columns:1fr}}
+.leader-card{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;background:#f7f8fa}
+.leader-card-name{font-size:11px;font-weight:700;color:#003366;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.leader-avatar{width:22px;height:22px;border-radius:50%;background:#7c5cd8;color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.leader-textarea{width:100%;min-height:70px;padding:7px 9px;border:1px solid #d0d7de;border-radius:6px;font-size:11px;font-family:inherit;color:#1f2328;background:white;resize:vertical;line-height:1.5;transition:border-color .15s,background .15s}
+.leader-textarea:focus{outline:none;border-color:#3b82d4;background:#fff}
+.leader-textarea.has-blocker{border-color:#dc3545;background:#fff5f5}
+.leader-textarea::placeholder{color:#adb5bd}
+.leader-blocker-tag{display:none;font-size:10px;color:#dc3545;font-weight:600;margin-top:4px}
+.leader-blocker-tag.visible{display:block}
+.leader-field-lbl{font-size:10px;font-weight:700;color:#57606a;margin-top:8px;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
+.leader-manager-input{width:100%;padding:5px 8px;border:1px solid #d0d7de;border-radius:6px;font-size:11px;font-family:inherit;color:#1f2328;background:white;line-height:1.5;transition:border-color .15s,background .15s}
+.leader-manager-input:focus{outline:none;border-color:#3b82d4;background:#fff}
+.leader-manager-input::placeholder{color:#adb5bd}
+.leader-sync-icon{font-size:10px;color:#57606a;margin-left:4px;display:inline-block;transition:color .2s}
+.leader-sync-icon.saving{color:#f59e0b}
+.leader-sync-icon.saved{color:#28a745}
+.leader-sync-icon.error{color:#dc3545}
+
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;color:white;font-size:10px;font-weight:700;white-space:nowrap}
+.b-comp{background:#28a745}
+.b-proc{background:#ffc107;color:#333}
+.b-ns{background:#dc3545}
+.b-na{background:#6c757d}
+
+.alert-panel{background:white;padding:16px 18px;border-radius:10px;border:1px solid #e5e7eb}
+.alert-panel h3{font-size:13px;font-weight:700;margin-bottom:10px}
+.al-list{display:flex;flex-direction:column;gap:7px}
+.al{border-left:4px solid #ff9800;background:#fff8f0;padding:9px 12px;border-radius:0 6px 6px 0;font-size:12px}
+.al strong{color:#e65c00}
+.al.al-r{border-left-color:#dc3545;background:#fff5f5}.al.al-r strong{color:#b02a37}
+.al.al-g{border-left-color:#28a745;background:#f0fff4}.al.al-g strong{color:#1a7a35}
+.ts{font-size:10px;color:#57606a;margin-top:12px;text-align:right}
+
+/* GRÁFICAS */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:800px){.charts-grid{grid-template-columns:1fr}}
+.chart-box{background:white;padding:16px 18px;border-radius:10px;border:1px solid #e5e7eb;transition:box-shadow .2s}
+.chart-box:hover{box-shadow:0 4px 16px rgba(0,0,0,.07)}
+.chart-box h3{font-size:13px;font-weight:700;margin-bottom:14px;color:#1f2328}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#57606a;cursor:pointer;border-radius:4px;padding:2px 4px;transition:background .15s}
+.legend-item:hover{background:#f0f2f5}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+/* Tooltip mejorado */
+.svg-tip{position:fixed;background:#1f2328;color:white;padding:7px 12px;border-radius:8px;font-size:11px;pointer-events:none;display:none;z-index:9999;white-space:nowrap;line-height:1.6;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.svg-tip::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom:none;border-top-color:#1f2328}
+/* Animaciones gráficas */
+@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes barGrowY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes donaIn{from{stroke-dashoffset:var(--dash-total)}to{stroke-dashoffset:var(--dash-offset)}}
+.ch-bar{transform-origin:left center;animation:barGrow .45s cubic-bezier(.25,.8,.25,1) both}
+.ch-bar-y{transform-origin:center bottom;animation:barGrowY .45s cubic-bezier(.25,.8,.25,1) both}
+.ch-fade{animation:fadeIn .4s ease both}
+/* Hover interactivo en SVG */
+.ch-clickable{cursor:pointer;transition:opacity .15s,filter .15s}
+.ch-clickable:hover{opacity:1!important;filter:brightness(1.12)}
+.ch-group:hover .ch-clickable{opacity:.45}
+.ch-group:hover .ch-clickable:hover{opacity:1;filter:brightness(1.1)}
+/* Badge de filtro activo en gráfica */
+.chart-filter-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;background:#eef3fa;color:#3b82d4;border:1px solid #c8d8f0;border-radius:20px;padding:2px 8px;margin-left:8px;cursor:pointer;font-weight:600}
+.chart-filter-badge:hover{background:#dbeafe}
+/* Leyenda activa (filtro aplicado) */
+.legend-active{background:#eef3fa;color:#3b82d4;font-weight:700}
+.legend-active .legend-dot{outline:2px solid #3b82d4;outline-offset:1px}
+/* Botón toggle tabla */
+.btn-toggle-tbl{width:22px;height:22px;border-radius:50%;border:1px solid #d0d7de;background:#f7f8fa;color:#57606a;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;transition:background .15s,color .15s,transform .25s}
+.btn-toggle-tbl:hover{background:#003366;color:white;border-color:#003366}
+/* Wrap colapsable */
+#tabla-body-wrap{overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s ease}
+#tabla-body-wrap.collapsed{max-height:0!important;opacity:0;pointer-events:none}
+
+footer{margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;text-align:center;font-size:11px;color:#8c959f}
+.nm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center}
+.nm-modal{background:white;border-radius:12px;padding:28px 32px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.nm-modal h2{font-size:15px;font-weight:700;color:#1f2328;margin-bottom:8px}
+.nm-modal p{font-size:12px;color:#57606a;margin-bottom:16px;line-height:1.6}
+.nm-info{background:#f7f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:12px}
+.nm-info label{font-size:10px;font-weight:700;color:#57606a;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+.nm-info span{font-size:13px;font-weight:700;color:#003366}
+.nm-progress{display:none;font-size:12px;color:#57606a;margin-bottom:12px;padding:8px 12px;background:#f0fff4;border-radius:6px;border:1px solid #b7e4c7}
+.nm-progress.error{background:#fff5f5;color:#b02a37;border-color:#f5c2c7}
+.nm-footer{display:flex;gap:10px;justify-content:flex-end}
+/* ── Modal selector de tablero ── */
+.sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;display:flex;align-items:center;justify-content:center}
+.sb-modal{background:white;border-radius:12px;padding:24px 28px;max-width:520px;width:94%;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.sb-modal h2{font-size:14px;font-weight:700;color:#1f2328;margin-bottom:4px}
+.sb-modal p{font-size:11px;color:#57606a;margin-bottom:14px}
+.sb-search{width:100%;padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:12px;margin-bottom:10px;box-sizing:border-box}
+.sb-search:focus{outline:2px solid #3b82d4;border-color:#3b82d4}
+.sb-list{max-height:280px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f2f5;transition:background .12s}
+.sb-item:last-child{border-bottom:none}
+.sb-item:hover{background:#eef3fa}
+.sb-item.active{background:#eef3fa;border-left:3px solid #3b82d4}
+.sb-item-name{font-size:12px;font-weight:600;color:#1f2328;flex:1}
+.sb-item-id{font-size:10px;color:#57606a}
+.sb-item-icon{width:28px;height:28px;border-radius:6px;background:#003366;color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.sb-status{font-size:11px;color:#57606a;padding:6px 0;min-height:20px}
+.btn-lang{background:transparent;color:white;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:6px;transition:background .15s,border-color .15s}
+.btn-lang:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.7)}
+.btn-lang .lang-flag{font-size:14px;line-height:1}
+</style>
+</head>
+<body>
+
+<!-- ENCABEZADO -->
+<div class="header">
+  <div>
+    <h1 data-i18n="title">Centro de Operaciones de Cierre Financiero – RTR México y SCAC</h1>
+    <p data-i18n="subtitle">Monitoreo en tiempo real del progreso, entregables y bloqueantes del cierre contable</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="header-right" id="header-stats"></div>
+    <button class="btn-lang" id="btn-lang">
+      <span class="lang-flag">🇺🇸</span><span id="lang-label">English</span>
+    </button>
+  </div>
+</div>
+
+<!-- ZONA DE CARGA EXCEL / MONDAY -->
+<div style="background:white;padding:10px 18px;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:600;color:#1f2328">🔗 Fuente de datos:</span>
+    <span id="upload-desc-auto" style="font-size:12px;color:#57606a">⏳ Conectando con Monday.com…</span>
+    <span class="file-status" id="file-status"></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button class="btn btn-out" style="padding:4px 10px;font-size:11px" id="btn-recargar" onclick="cargarDesdeMondayAPI()">🔄 Recargar</button>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none">
+  <p id="upload-desc-manual" style="display:none;font-size:11px;color:#57606a;margin:0"></p>
+</div>
+
+<!-- MODAL SELECTOR DE TABLERO -->
+<div class="sb-overlay" id="sb-overlay" style="display:none">
+  <div class="sb-modal">
+    <h2>📋 Seleccionar tablero</h2>
+    <p>Elige el tablero de Monday.com que quieres cargar en el dashboard.</p>
+    <input class="sb-search" id="sb-search" type="text" placeholder="Buscar tablero…" oninput="filtrarTableros()">
+    <div class="sb-list" id="sb-list"></div>
+    <div class="sb-status" id="sb-status"></div>
+    <div class="sb-footer">
+      <button class="btn btn-out" onclick="cerrarSelectorTablero()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO MES -->
+<div class="nm-overlay" id="nm-overlay" style="display:none">
+  <div class="nm-modal">
+    <h2 id="nm-title">Duplicar grupo para nuevo mes</h2>
+    <p style="font-size:12px;color:#57606a;margin-bottom:14px;line-height:1.5">
+      Elige el grupo fuente y el nombre del nuevo grupo. Se copiarán <strong>todos los campos</strong> excepto <em>Estatus Entregable</em> y <em>Estatus Cierre</em> que quedarán en blanco.
+    </p>
+
+    <div class="nm-info">
+      <label style="font-size:10px;font-weight:700;color:#57606a;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Grupo fuente (copiar de aquí):</label>
+      <select id="nm-source-sel" style="width:100%;padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:12px;color:#1f2328;background:#f7f8fa">
+        <option value="">⏳ Cargando grupos…</option>
+      </select>
+    </div>
+
+    <div class="nm-info">
+      <label style="font-size:10px;font-weight:700;color:#57606a;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Nombre del nuevo grupo:</label>
+      <input id="nm-nombre-input" type="text" style="width:100%;padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:12px;color:#1f2328;background:white;box-sizing:border-box"
+        placeholder="Ej: Actividades de Cierre Octubre 26">
+    </div>
+
+    <div class="nm-progress" id="nm-progress"></div>
+    <!-- Panel diagnóstico columnas -->
+    <div id="nm-diag" style="display:none;max-height:200px;overflow-y:auto;background:#f7f8fa;border:1px solid #e5e7eb;border-radius:6px;padding:10px;margin-bottom:12px;font-size:11px;font-family:monospace;white-space:pre-wrap;color:#1f2328;line-height:1.5"></div>
+    <div class="nm-footer">
+      <button class="btn btn-out" id="nm-btn-cancel" onclick="cerrarModalNuevoMes()">Cancelar</button>
+      <button class="btn btn-out" id="nm-btn-diag" onclick="diagnosticarColumnas()" style="border-color:#7c5cd8;color:#7c5cd8">🔍 Ver columnas</button>
+      <button class="btn" id="nm-btn-confirm" style="background:#003366" onclick="ejecutarNuevoMes()">➕ Crear grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div class="filters">
+  <div class="fg"><label data-i18n="f_anio">Año</label>
+    <select id="f-anio"><option value="" data-i18n-opt="f_anio_all">Todos los Años</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_mes">Mes</label>
+    <select id="f-mes"><option value="" data-i18n-opt="f_mes_all">Todos los Meses</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_op">Operación</label>
+    <select id="f-op"><option value="" data-i18n-opt="f_op_all">Todas las Operaciones</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_area">Área</label>
+    <select id="f-area"><option value="" data-i18n-opt="f_area_all">Todas las Áreas</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_resp">Responsable</label>
+    <select id="f-resp"><option value="" data-i18n-opt="f_resp_all">Todos los Responsables</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_estado">Estado</label>
+    <select id="f-estado"><option value="" data-i18n-opt="f_estado_all">Todos los Estados</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_pais">País</label>
+    <select id="f-pais"><option value="" data-i18n-opt="f_pais_all">Todos los Países</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_dia">Día</label>
+    <select id="f-dia"><option value="" data-i18n-opt="f_dia_all">Todos los Días</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_tipo">Tipo</label>
+    <select id="f-tipo"><option value="" data-i18n-opt="f_tipo_all">Todos los Tipos</option></select>
+  </div>
+  <div class="fg"><label data-i18n="f_search_lbl">Buscar actividad</label>
+    <input class="search-box" id="f-search" type="text" data-i18n-ph="f_search_ph" placeholder="Escribir nombre...">
+  </div>
+  <button class="btn btn-out" id="btn-limpiar" data-i18n="btn_clear">Limpiar</button>
+</div>
+
+<!-- KPIs -->
+<div class="kpis">
+  <div class="card c-tot"><div class="kpi-num" id="k-tot">—</div><div class="kpi-lbl" data-i18n="kpi_tot">Total Actividades</div><div class="kpi-pct" id="k-tot-p"></div></div>
+  <div class="card c-comp"><div class="kpi-num" id="k-comp">—</div><div class="kpi-lbl" data-i18n="kpi_comp">Completadas</div><div class="kpi-pct" id="k-comp-p"></div></div>
+  <div class="card c-proc"><div class="kpi-num" id="k-proc">—</div><div class="kpi-lbl" data-i18n="kpi_proc">En Proceso</div><div class="kpi-pct" id="k-proc-p"></div></div>
+  <div class="card c-ns"><div class="kpi-num" id="k-ns">—</div><div class="kpi-lbl" data-i18n="kpi_ns">No Iniciadas</div><div class="kpi-pct" id="k-ns-p"></div></div>
+</div>
+
+<!-- Comentarios globales por líder — ancho completo -->
+<div class="leader-comments" id="leader-comments-panel" style="margin-bottom:16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+    <h3 style="margin:0" data-i18n="chart_leader_comments">&#128172; Comentarios / Bloqueantes por Líder</h3>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-out" style="padding:4px 12px;font-size:11px" onclick="cargarLeaderBoard()">🔄 Actualizar comentarios</button>
+      <button class="btn" style="padding:4px 12px;font-size:11px;background:#003366" onclick="abrirModalNuevoMes()">➕ Nuevo grupo mes</button>
+    </div>
+  </div>
+  <!-- Card del Manager -->
+  <div style="margin-bottom:14px" id="manager-card-container"></div>
+  <div class="leader-comments-grid" id="leader-comments-grid"></div>
+</div>
+
+<!-- PROGRESO -->
+<div class="section">
+  <h3 data-i18n="sec_avance">Avance General del Cierre</h3>
+  <div class="prog-bar"><div class="prog" id="progBar" style="width:0%">0%</div></div>
+  <div class="prog-meta"><span id="prog-izq">—</span><span id="prog-der">—</span></div>
+</div>
+
+<!-- AVANCE POR ÁREA -->
+<div class="section" style="margin-bottom:16px">
+  <h3 data-i18n="sec_area">Avance por Área</h3>
+  <div id="area-breakdown"></div>
+</div>
+
+<!-- GRÁFICAS -->
+<div class="charts-grid">
+  <!-- Dona: distribución de estados -->
+  <div class="chart-box">
+    <h3 data-i18n="chart_dona">Distribución de Estados</h3>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div id="chart-dona" style="flex-shrink:0"></div>
+      <div>
+        <div class="legend" id="dona-legend"></div>
+        <div style="margin-top:14px;font-size:11px;color:#57606a" id="dona-total"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Barras apiladas: estados por área -->
+  <div class="chart-box">
+    <h3 data-i18n="chart_areas">Estados por Área</h3>
+    <div id="chart-areas"></div>
+    <div class="legend" id="areas-legend"></div>
+  </div>
+</div>
+<div class="charts-grid">
+  <!-- Barras: avance % por responsable -->
+  <div class="chart-box">
+    <h3 data-i18n="chart_resp">% Completado por Responsable</h3>
+    <div id="chart-resp"></div>
+  </div>
+  <!-- Barras: actividades por operación -->
+  <div class="chart-box">
+    <h3 data-i18n="chart_op">Actividades por Operación</h3>
+    <div id="chart-op"></div>
+    <div class="legend" id="op-legend"></div>
+  </div>
+</div>
+<!-- Gráfica por Estatus Entregable (Cierre vs Postcierre) -->
+<div class="charts-grid" style="margin-bottom:16px">
+  <div class="chart-box">
+    <h3 data-i18n="chart_tipo_est">Estado por Tipo de Entregable</h3>
+    <div id="chart-tipo-est"></div>
+    <div class="legend" id="tipo-est-legend"></div>
+  </div>
+  <div class="chart-box">
+    <h3 data-i18n="chart_tipo_dist">Distribución Cierre vs Postcierre</h3>
+    <div id="chart-tipo-dist"></div>
+    <div class="legend" id="tipo-dist-legend"></div>
+  </div>
+</div>
+<!-- Gráfica por día -->
+<div class="chart-box" style="margin-bottom:16px">
+  <h3 data-i18n="chart_dia">Actividades por Día</h3>
+  <div id="chart-dia" style="overflow-x:auto"></div>
+  <div class="legend" id="dia-legend"></div>
+</div>
+
+<!-- TOOLTIP GLOBAL -->
+<div class="svg-tip" id="svg-tip"></div>
+
+<!-- TABLA -->
+<div class="table-container" id="table-container">
+  <div class="tbl-hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="btn-toggle-tabla" class="btn-toggle-tbl" onclick="toggleTabla()" title="Mostrar / Ocultar actividades" aria-expanded="true">▼</button>
+      <h3 data-i18n="tbl_title">Detalle de Actividades</h3>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="res-cnt" id="res-cnt"></span>
+      <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#57606a">
+        <label for="pg-size">Filas:</label>
+        <select id="pg-size" style="padding:3px 6px;border:1px solid #d0d7de;border-radius:6px;font-size:11px;color:#1f2328;background:#f7f8fa">
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="0">Todas</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="tabla-body-wrap">
+  <table>
+    <!-- anchos fijos: suma ~1160px mínimo; la tabla hace scroll horizontal en pantallas pequeñas -->
+    <colgroup>
+      <col style="width:34px">         <!-- # -->
+      <col style="width:240px">        <!-- Actividad -->
+      <col style="width:40px">         <!-- Día -->
+      <col style="width:82px">         <!-- Operación -->
+      <col style="width:170px">        <!-- Área -->
+      <col style="width:120px">        <!-- Responsable -->
+      <col style="width:110px">        <!-- Países -->
+      <col style="width:130px">        <!-- Estado -->
+      <col style="width:130px">        <!-- Estatus Entregable -->
+      <col>                            <!-- Comentarios: toma el resto -->
+    </colgroup>
+    <thead>
+      <tr><th>#</th><th data-i18n="th_act">Actividad</th><th data-i18n="th_dia">Día</th><th data-i18n="th_op">Operación</th><th data-i18n="th_area">Área</th><th data-i18n="th_resp">Responsable</th><th data-i18n="th_pais">Países</th><th data-i18n="th_est">Estado</th><th data-i18n="th_tipo">Estatus Entregable</th><th data-i18n="th_com">Comentarios</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <p class="ts" id="ts"></p>
+  <div class="tbl-pagination" id="tbl-pagination"></div>
+  </div><!-- /tabla-body-wrap -->
+</div>
+
+<!-- ALERTAS -->
+<div class="alert-panel">
+  <h3 data-i18n="sec_alerts">&#9888; Alertas</h3>
+  <div class="al-list" id="al-list"></div>
+</div>
+
+<footer>Made with IBM Bob</footer>
+
+<script>
+// ── INTERNACIONALIZACIÓN (ES / EN) ───────────────────────────────────────────
+let LANG = "es";
+
+const I18N = {
+  es: {
+    title:"Centro de Operaciones de Cierre Financiero – RTR México y SCAC",
+    subtitle:"Monitoreo en tiempo real del progreso, entregables y bloqueantes del cierre contable",
+    f_op:"Operación", f_op_all:"Todas las Operaciones",
+    f_area:"Área",    f_area_all:"Todas las Áreas",
+    f_resp:"Responsable", f_resp_all:"Todos los Responsables",
+    f_estado:"Estado",  f_estado_all:"Todos los Estados",
+    f_pais:"País",    f_pais_all:"Todos los Países",
+    f_dia:"Día",      f_dia_all:"Todos los Días",
+    f_tipo:"Tipo",    f_tipo_all:"Todos los Tipos",
+    f_anio:"Año",     f_anio_all:"Todos los Años",
+    f_mes:"Mes",      f_mes_all:"Todos los Meses",
+    f_search_lbl:"Buscar actividad", f_search_ph:"Escribir nombre...",
+    btn_clear:"Limpiar",
+    kpi_tot:"Total Actividades", kpi_comp:"Completadas",
+    kpi_proc:"En Proceso",       kpi_ns:"No Iniciadas",
+    kpi_filter:"del filtro actual", kpi_of_total:"del total",
+    sec_avance:"Avance General del Cierre",
+    sec_area:"Avance por Área",
+    chart_dona:"Distribución de Estados",
+    chart_areas:"Estados por Área",
+    chart_resp:"% Completado por Responsable",
+    chart_op:"Actividades por Operación",
+    chart_dia:"Actividades por Día",
+    chart_leader_comments:"💬 Estatus Entregable por Líder",
+    leader_placeholder:"Estatus, avances o bloqueantes…",
+    leader_blocker:"⚠ Bloqueante detectado",
+    tbl_title:"Detalle de Actividades",
+    tbl_showing:"Mostrando",tbl_of:"de",tbl_activities:"actividades",
+    th_act:"Actividad",th_dia:"Día",th_op:"Operación",th_area:"Área",
+    th_resp:"Responsable",th_pais:"Países",th_est:"Estado",
+    th_comments:"Estatus Entregable",
+    th_tipo:"Estatus Entregable",
+    th_com:"Comentarios",
+    tipo_cierre:"Cierre",
+    tipo_poscierre:"Postcierre",
+    tbl_no_results:"Sin resultados para los filtros seleccionados.",
+    ts_prefix:"Última actualización:",
+    prog_of:"de",prog_activities:"actividades completadas",prog_completed:"completado",
+    sec_alerts:"⚠ Alertas",
+    al_no_started_a:"actividad(es) No Iniciadas",al_no_started_b:"requieren atención inmediata.",
+    al_pending:"tiene la mayor carga pendiente con",al_tasks:"tareas activas.",
+    al_done:"¡Cierre completado! Todas las actividades filtradas han sido finalizadas.",
+    al_none:"✓ Sin alertas activas para los filtros seleccionados.",
+    hdr_total:"Total:",hdr_activities:"actividades",hdr_completed:"Completadas",
+    sin_datos:"Sin datos.",
+    dia_prefix:"Día ",
+    chart_tipo_est:"Estado por Tipo de Entregable",
+    chart_tipo_dist:"Distribución Cierre vs Postcierre",
+    nm_btn:"➕ Nuevo Mes",
+    nm_title:"Duplicar tablero para nuevo mes",
+    nm_desc:"Se creará un nuevo grupo en Monday con el nombre del mes/año siguiente, copiando todas las actividades del período actual con estado <strong>No Iniciado</strong> y comentarios en blanco.",
+    nm_periodo_lbl:"Nuevo período:",
+    nm_source_lbl:"Basado en grupo:",
+    nm_confirm:"Crear nuevo mes",
+    nm_cancel:"Cancelar",
+    nm_creating:"Creando grupo…",
+    nm_copying:"Copiando actividades…",
+    nm_done:"✅ Nuevo mes creado correctamente en Monday.",
+    nm_err:"❌ Error al crear el nuevo mes:",
+    nm_no_group:"No hay grupos disponibles en Monday para duplicar.",
+    nm_no_token:"Se requiere conexión con Monday para usar esta función.",
+    ldr_comment_lbl:"Comentario TL",
+    ldr_comment_ph:"Estatus, avances o bloqueantes…",
+    ldr_manager_lbl:"Manager",
+    ldr_manager_ph:"Nombre del manager…",
+    ldr_monday_link:"Ver en Monday",
+  },
+  en: {
+    title:"Financial Close Operations Center – RTR Mexico & SCAC",
+    subtitle:"Real-time monitoring of progress, deliverables and blockers for the accounting close",
+    f_op:"Operation", f_op_all:"All Operations",
+    f_area:"Area",     f_area_all:"All Areas",
+    f_resp:"Owner",    f_resp_all:"All Owners",
+    f_estado:"Status", f_estado_all:"All Statuses",
+    f_pais:"Country",  f_pais_all:"All Countries",
+    f_dia:"Day",       f_dia_all:"All Days",
+    f_tipo:"Type",     f_tipo_all:"All Types",
+    f_anio:"Year",     f_anio_all:"All Years",
+    f_mes:"Month",     f_mes_all:"All Months",
+    f_search_lbl:"Search activity", f_search_ph:"Type name...",
+    btn_clear:"Clear",
+    kpi_tot:"Total Activities", kpi_comp:"Completed",
+    kpi_proc:"In Progress",      kpi_ns:"Not Started",
+    kpi_filter:"of current filter", kpi_of_total:"of total",
+    sec_avance:"Overall Close Progress",
+    sec_area:"Progress by Area",
+    chart_dona:"Status Distribution",
+    chart_areas:"Statuses by Area",
+    chart_resp:"% Completed by Owner",
+    chart_op:"Activities by Operation",
+    chart_dia:"Activities by Day",
+    chart_leader_comments:"💬 Deliverable Status by Leader",
+    leader_placeholder:"Status, updates or blockers…",
+    leader_blocker:"⚠ Blocker detected",
+    tbl_title:"Activity Detail",
+    tbl_showing:"Showing",tbl_of:"of",tbl_activities:"activities",
+    th_act:"Activity",th_dia:"Day",th_op:"Operation",th_area:"Area",
+    th_resp:"Owner",th_pais:"Countries",th_est:"Status",
+    th_comments:"Deliverable Status",
+    th_tipo:"Deliverable Status",
+    th_com:"Comments",
+    tipo_cierre:"Close",
+    tipo_poscierre:"Post-close",
+    tbl_no_results:"No results for the selected filters.",
+    ts_prefix:"Last updated:",
+    prog_of:"of",prog_activities:"activities completed",prog_completed:"completed",
+    sec_alerts:"⚠ Alerts",
+    al_no_started_a:"activity(ies) Not Started",al_no_started_b:"require immediate attention.",
+    al_pending:"has the highest pending load with",al_tasks:"active tasks.",
+    al_done:"Close complete! All filtered activities have been finalized.",
+    al_none:"✓ No active alerts for the selected filters.",
+    hdr_total:"Total:",hdr_activities:"activities",hdr_completed:"Completed",
+    sin_datos:"No data.",
+    dia_prefix:"Day ",
+    chart_tipo_est:"Status by Deliverable Type",
+    chart_tipo_dist:"Close vs Post-close Distribution",
+    nm_btn:"➕ New Month",
+    nm_title:"Duplicate board for new month",
+    nm_desc:"A new group will be created in Monday with the next month/year name, copying all activities from the current period with status <strong>Not Started</strong> and blank comments.",
+    nm_periodo_lbl:"New period:",
+    nm_source_lbl:"Based on group:",
+    nm_confirm:"Create new month",
+    nm_cancel:"Cancel",
+    nm_creating:"Creating group…",
+    nm_copying:"Copying activities…",
+    nm_done:"✅ New month created successfully in Monday.",
+    nm_err:"❌ Error creating new month:",
+    nm_no_group:"No groups available in Monday to duplicate.",
+    nm_no_token:"Monday connection is required to use this feature.",
+    ldr_comment_lbl:"TL Comment",
+    ldr_comment_ph:"Status, updates or blockers…",
+    ldr_manager_lbl:"Manager",
+    ldr_manager_ph:"Manager name…",
+    ldr_monday_link:"View in Monday",
+  }
+};
+
+function t(key){ return I18N[LANG][key] || key; }
+
+function applyLang() {
+  // Static text nodes
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    el.innerHTML = t(key);
+  });
+  // Select first-option labels
+  document.querySelectorAll("[data-i18n-opt]").forEach(el => {
+    el.textContent = t(el.getAttribute("data-i18n-opt"));
+  });
+  // Input placeholders
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+    el.placeholder = t(el.getAttribute("data-i18n-ph"));
+  });
+  // Leader placeholder texts (dynamic textareas)
+  document.querySelectorAll(".leader-textarea").forEach(ta => {
+    ta.placeholder = t("leader_placeholder");
+  });
+  document.querySelectorAll(".leader-blocker-tag").forEach(el => {
+    el.textContent = t("leader_blocker");
+  });
+  // Toggle button label
+  if (LANG === "es") {
+    document.getElementById("lang-label").textContent = "English";
+    document.querySelector("#btn-lang .lang-flag").textContent = "🇺🇸";
+  } else {
+    document.getElementById("lang-label").textContent = "Español";
+    document.querySelector("#btn-lang .lang-flag").textContent = "🇲🇽";
+  }
+  // Re-render dynamic content with new language
+  reconstruirFiltros();
+  render();
+}
+
+// ── COMENTARIOS / BLOQUEANTES (persistidos en memoria) ────────────────────────
+const COMMENTS = {}; // clave: nombre de actividad → texto del comentario
+
+function saveComment(key, value) {
+  COMMENTS[key] = value;
+}
+function getComment(key) {
+  return COMMENTS[key] || "";
+}
+
+// ── DATOS POR DEFECTO (último mes cargado) ────────────────────────────────────
+let DATA = [
+  {n:"DEPRECIACIÓN PAISES SCAC",dia:27,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"DEPRECIACION COLOMBIA",dia:29,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Colombia"},
+  {n:"REPORTE DE GASTO W-2",dia:28,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"REPORTE DE GASTO COLOMBIA",dia:30,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Colombia"},
+  {n:"INTEGRIDAD W-1",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"FLUCTUACION W-1",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"ASKBN W-1",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"CORREO LIQUIDACION PS SAC W+1",dia:2,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"CAPEX SCAC",dia:1,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"REPORTE ALTA Y BAJAS SAC +PAN+RDO",dia:2,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"CERTIFICATION OF INVESTMENT PROJECT SCAC",dia:2,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"CAPEX COLOMBIA",dia:2,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Colombia"},
+  {n:"ANTIGÜEDAD DE SALDOS SAC W+2",dia:3,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"CIERRE REGISTROS CONTABLES (NICARAGUA, PUERTO RICO, CARIBE, HAITI, PANAMA, BEHALDE)",dia:31,op:"SCAC",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"IHB (HAITI, CARIBE, PUERTO RICO, PANAMA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"INTERCOMPANY (NICARAGUA, PUERTO RICO, CARIBE, HAITI, PANAMA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"FLUCTUACIÓN (PERU, NICARAGUA, HAITI, BEHALDE, TRANSENERGY)",dia:1,op:"SCAC",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"MONITOR (PERU, NICARAGUA, HAITI, BEHALDE, TRANSENERGY, PUERTO RICO, PANAMA, CARIBE, SOUTHINGTON)",dia:1,op:"SCAC",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"CORREO DE CIERRE PERU, NICARAGUA, HAITI, BEHALDE, TRANSENERGY, PUERTO RICO, PANAMA, CARIBE",dia:1,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"MONITOR Y CORREO DE CIERRE (BAHAMAS)",dia:2,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Bahamas"},
+  {n:"MONITOR Y CORREO DE CIERRE (JAMAICA)",dia:3,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Jamaica"},
+  {n:"REGALIAS COLOMBIA",dia:1,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"PROVISIONES RENTA COLOMBIA",dia:1,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"DIFERIDOS IMPUESTOS-CONTABILIZACIONES COLOMBIA",dia:1,op:"SCAC",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"FLUCTUACION CAMBIARIA COLOMBIA",dia:1,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"NETO INTERCOMPAÑIAS COLOMBIA",dia:2,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"INVENTARIO EN TRANSITO (NICARAGUA Y PUERTO RICO)",dia:4,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Nicaragua, Puerto Rico"},
+  {n:"CONFIRMACION CIERRE COSTOS (COLOMBIA)",dia:4,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"MONITOR (COLOMBIA)",dia:4,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"SEGUROS (COLOMBIA)",dia:4,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"FINALIZACION PROCESO INTERCOMPAÑIAS (COLOMBIA)",dia:30,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"REALIZAR REGISTRO DIFERENCIA EN CAMBIO",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"INVERSION EN USD (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"REGISTROS DE IMPUESTOS (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"INTERESES (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"FIDUCIAS (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"NOMINA PIN -BANCOS (COLOMBIA)",dia:31,op:"SCAC",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"IVA IMPUESTOS (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"AJUSTES DE RENTA CONTABILIZACIONES (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"NETEO TRANSITO CLIENTES (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"RENTA REGISTRO (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"PROVISIONES MFS (COLOMBIA)",dia:30,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"PROVISIONES (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"REGISTRO ZOMAN (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"PREMEZCLADOS (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"RECLASIFICACIONES (COLOMBIA)",dia:31,op:"SCAC",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera SCAC",pais:"Colombia"},
+  {n:"CANDADEO PAISES SCAC",dia:15,op:"SCAC",est:"NOT APPLICABLE",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"IFRS- CONSOLIDADO PAISES SCAC",dia:15,op:"SCAC",est:"COMPLETED",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"LUCA PAISES SCAC",dia:4,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"PROCESS AND REVIEW PAISES SCAC",dia:4,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"MONITOR - Y SABANA Z2 PAISES SCAC",dia:5,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"LOCAL GAAP PAISES SCAC",dia:5,op:"SCAC",est:"COMPLETED",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"SABANAS SEGMENTOS PAISES SCAC",dia:5,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"TEXTOS CENTRAL PAISES SCAC",dia:3,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"WC PBI PAISES SCAC",dia:7,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"OPEX (CHARGBACK-GI-VTAS NETAS) PAISES SCAC",dia:7,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"OPEX (AJUSTES MANUALES) PAISES SCAC",dia:7,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"ROIC PAISES SCAC",dia:7,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"UNNAMED PAISES SCAC",dia:null,op:"SCAC",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación SCAC",pais:"Panamá, Nicaragua, Haití, Caribe, Bahamas, Perú, Puerto Rico, Southington, Jamaica"},
+  {n:"PROCESO DE OTROS SEGUROS Y SEGUROS DE AUTOS",dia:24,op:"MEXICO",est:"COMPLETED",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"CORRER DEPRECIACIÓN SOCIEDADES CENTRALES",dia:28,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"CORRER DEPRECIACIÓN SOCIEDADES",dia:28,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"DEPRECIACION A RESULTADOS DICIEMBRE",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"FLUCTUACION CAMBIARIA",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"CIERRE PROYECTOS INVERSIÓN MÉXICO",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"VALIDACIÓN INTEGRIDAD CUENTAS COSTO Y DEPRECIACIÓN AF MEXICO",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"VALIDACIÓN INTEGRIDAD INV. EN PROCESO MÉXICO",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"REPORTE ASKBN",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"ALTAS Y BAJAS ACTIVOS NO CEMENTEROS",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"REPORTE DE CAPEX CYN MEXICO",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"REPORTE DE CAPEX FILIALES",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"REPORTE FLC",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"CORREO CAPEX OTROS NEGOCIOS",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"INFORME LOTUS Y VALIDACIONES CAPEX CYN",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"CORREO DE CERTIFICACIÓN DE CIFRAS CAPEX",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"ROCE / CVA",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"SINIESTROS X RECUPERAR",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"INSURANCES REPORTS (SEGUROS)",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"ANTEPROYECTOS",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"REPORTE DE ALTAS FISCALES",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"BAJAS CONSOLIDACIÓN",dia:2,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"BAJAS MES (RELACION DE VENTAS)",dia:2,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"REPORTE ANTICIPOS",dia:2,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"DATOS FLC",dia:2,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"LISTADO DE AF AGREGADOS",dia:2,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"SALDO INVERSIONES EN PROCESO - ANTIGÜEDAD DE SALDOS",dia:3,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"REPORTE INMUEBLES",dia:3,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"CERTIFICACION DE PROYECTOS DE INVERSION",dia:3,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Activos Fijos México",pais:"México"},
+  {n:"Liberacion de Segmentos",dia:2,op:"MEXICO",est:"COMPLETED",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"Revision Polizas - Bitacora Y CTA 8000",dia:3,op:"MEXICO",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"IMPACTO CÑIAS A COMBINADO Y ENVIO REPORT TECMIN",dia:3,op:"MEXICO",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"REPORT ICP PREVIOS Y REPROCESOS",dia:3,op:"MEXICO",est:"NOT STARTED",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"REGISTRO ASIENTOS 20",dia:4,op:"MEXICO",est:"NOT APPLICABLE",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"Descargas ZST",dia:4,op:"MEXICO",est:"COMPLETED",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"LUCA Y CIERRE MODULO - Process / Review",dia:5,op:"MEXICO",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"Cuaderno Financiero",dia:5,op:"MEXICO",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"Generacion MTM",dia:5,op:"MEXICO",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"ENVIO REPORTES",dia:6,op:"MEXICO",est:"IN PROCESS",resp:"Ivonne Hernandez",area:"Consolidación México",pais:"México"},
+  {n:"Clearing Fonacot",dia:1,op:"MEXICO",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Conciliacion Previa",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Conciliacion CIH",dia:1,op:"MEXICO",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Fluctuacion",dia:1,op:"MEXICO",est:"NOT STARTED",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Zero Balance",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Liberaracion de compañias",dia:3,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Diferencias OIG",dia:2,op:"MEXICO",est:"COMPLETED",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Pd Y Pnd",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Saldos Contrarios",dia:2,op:"MEXICO",est:"NOT APPLICABLE",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Transitos",dia:2,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Conciliaciones Manuales",dia:2,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Recla Para Hfm",dia:2,op:"MEXICO",est:"NOT STARTED",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Diferencias ICP",dia:3,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Diferencia Con Central",dia:6,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"Maya belize",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"FV60",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"Luis Forero",area:"Información Financiera México",pais:"México"},
+  {n:"INVERSION",dia:31,op:"MEXICO",est:"NOT STARTED",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"CONCILIACION",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"PAGINT",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"CUADRE HOLDING",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"SALDOS HOLDING",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"POLIZAS",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"COT",dia:31,op:"MEXICO",est:"COMPLETED",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"REPORTE DE SALDOS DE ENERGIA",dia:31,op:"MEXICO",est:"COMPLETED",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"CONCILIACION MENSUAL",dia:31,op:"MEXICO",est:"COMPLETED",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"INFORME CONSOLIDACION VL",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"INFORME FIN MES",dia:31,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"GRUPO DE SUB ARRENDAMIENTO",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"PAGO CADENAS PRODUCTIVAS",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"ZERO BALANCE",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"REPORTE DE SALDO DE CUENTAS DE ENERGIA",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"KM18",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"KM20",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"INFORME TITULIZADOS",dia:1,op:"MEXICO",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería México",pais:"México"},
+  {n:"Descargar Estados de cuenta (COLOMBIA, PANAMA, PUERTO RICO, CARIBE, NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia, Panamá, Puerto Rico, Caribe, Nicaragua"},
+  {n:"Saldos diarios (COLOMBIA, PANAMA, PUERTO RICO, CARIBE, NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia, Panamá, Puerto Rico, Caribe, Nicaragua"},
+  {n:"Cruce de Saldos (COLOMBIA, PANAMA, PUERTO RICO, CARIBE, NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia, Panamá, Puerto Rico, Caribe, Nicaragua"},
+  {n:"CARGUE BANCOS A SAP (COLOMBIA, PANAMA, PUERTO RICO, CARIBE, PERU, NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia, Panamá, Puerto Rico, Caribe, Perú, Nicaragua"},
+  {n:"Reporte de salarios (PUERTO RICO, PANAMA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Puerto Rico, Panamá"},
+  {n:"Reporte de Cash Pooling (COLOMBIA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia"},
+  {n:"Reporte de Fiducias (COLOMBIA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia"},
+  {n:"Compensacion de partidas abiertas (CARIBE, PUERTO RICO, PERU, NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Caribe, Puerto Rico, Perú, Nicaragua"},
+  {n:"Reporte Partidas Abiertas (PUERTO RICO, NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Puerto Rico, Nicaragua"},
+  {n:"REPORTE DE SALDOS DIARIOS FINALES (COLOMBIA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia"},
+  {n:"CASH BALANCE (COLOMBIA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia"},
+  {n:"REVISION CUENTA EN USD COLOMBIA",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia"},
+  {n:"Intereses IHB (PERU, NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Perú, Nicaragua"},
+  {n:"Carga CGO COLOMBIA",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Colombia"},
+  {n:"INFORME DE CIERRE (NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Nicaragua"},
+  {n:"Informes power bi y sap (NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Nicaragua"},
+  {n:"CARATULAS (NICARAGUA)",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Nicaragua"},
+  {n:"REGISTROS SAP (RECLASIFICACIONES) NICARAGUA",dia:1,op:"SCAC",est:"IN PROCESS",resp:"John Pulido",area:"Tesorería SCAC",pais:"Nicaragua"},
+];
+
+// Aplicar normTipo y mes/año actuales a datos por defecto
+const _hoy = new Date();
+DATA.forEach(d => {
+  if (!d.tipo) d.tipo = "cierre";
+  if (!d.mes)  d.mes  = _hoy.getMonth() + 1;
+  if (!d.anio) d.anio = _hoy.getFullYear();
+});
+
+// ── NORMALIZACIÓN CENTRALIZADA ────────────────────────────────────────────────
+function normalizarDatos(arr) {
+  const hoy = new Date();
+  arr.forEach(d => {
+    // Normalizar estado
+    const e = (d.est || "").toUpperCase().trim();
+    if (e === "COMPLETED"  || e === "COMPLETADO")                             d.est = "COMPLETED";
+    else if (e === "IN PROCESS" || e === "EN PROCESO" || e === "EN PROGRESO") d.est = "IN PROCESS";
+    else if (e === "NOT STARTED"|| e === "NO INICIADO")                       d.est = "NOT STARTED";
+    // Normalizar tipo entregable
+    d.tipo = normTipo(d.tipo || "");
+    // Asegurar mes y año — si vienen null intentar parsear campo extra o usar fecha actual
+    if (!d.mes || !d.anio) {
+      const p = parsearPeriodo(d._grupo || "");
+      if (!d.mes)  d.mes  = p.mes  || (hoy.getMonth() + 1);
+      if (!d.anio) d.anio = p.anio || hoy.getFullYear();
+    }
+  });
+}
+
+// ── MAPEO DE COLUMNAS EXCEL ───────────────────────────────────────────────────
+// Busca la columna ignorando mayúsculas/espacios extras
+function buscarCol(headers, ...opciones) {
+  for (const op of opciones) {
+    const idx = headers.findIndex(h => h && h.toString().trim().toLowerCase() === op.toLowerCase());
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+// ── LEER EXCEL ────────────────────────────────────────────────────────────────
+function procesarExcel(file) {
+  const status = document.getElementById("file-status");
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb   = XLSX.read(e.target.result, { type: "array" });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+      if (rows.length < 2) throw new Error("El archivo está vacío o no tiene datos.");
+
+      // Detectar fila de encabezados (primera fila no vacía)
+      const headers = rows[0].map(h => h ? h.toString().trim() : "");
+
+      const iName  = buscarCol(headers, "Name", "Nombre", "ACTIVIDAD", "Actividad");
+      const iDia   = buscarCol(headers, "Dia", "Día", "DIA");
+      const iOp    = buscarCol(headers, "Operación", "Operacion", "OPERACION", "Operation");
+      const iEst   = buscarCol(headers, "Estatus Cierre", "Estatus", "Estado", "STATUS", "Estatus_Cierre");
+      const iResp  = buscarCol(headers, "Responsable", "RESPONSABLE");
+      const iArea  = buscarCol(headers, "Areas", "Área", "Area", "AREA", "AREAS");
+      const iPais  = buscarCol(headers, "PAISES", "Paises", "País", "Pais", "PAIS");
+      const iTipo  = buscarCol(headers, "Estatus Entregable", "Tipo", "TIPO", "Deliverable Status", "Cierre_Tipo");
+      const iCom   = buscarCol(headers, "Comentarios", "Comentario", "Comments", "Comment", "COMENTARIOS");
+
+      if (iName === -1 || iEst === -1) {
+        throw new Error('No se encontraron las columnas "Name" y "Estatus Cierre". Revisa la plantilla.');
+      }
+
+      const nuevos = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const nombre = r[iName] ? r[iName].toString().trim() : "";
+        if (!nombre) continue; // saltar filas vacías
+
+        nuevos.push({
+          n:    nombre,
+          dia:  iDia  !== -1 && r[iDia]  !== "" ? Number(r[iDia])  : null,
+          op:   iOp   !== -1 ? r[iOp].toString().trim()   : "",
+          est:  iEst  !== -1 ? r[iEst].toString().trim().toUpperCase()  : "",
+          resp: iResp !== -1 ? r[iResp].toString().trim() : "",
+          area: iArea !== -1 ? r[iArea].toString().trim() : "",
+          pais: iPais !== -1 ? r[iPais].toString().trim() : "",
+          tipo: iTipo !== -1 ? r[iTipo].toString().trim() : "",
+          com:  iCom  !== -1 ? r[iCom].toString().trim()  : "",
+        });
+      }
+
+      if (nuevos.length === 0) throw new Error("No se encontraron filas con datos válidos.");
+      normalizarDatos(nuevos);
+      DATA = nuevos;
+      reconstruirFiltros();
+      render();
+
+      status.style.display = "inline-block";
+      status.className = "file-status";
+      status.textContent = `✓ "${file.name}" cargado — ${nuevos.length} actividades`;
+
+    } catch(err) {
+      status.style.display = "inline-block";
+      status.className = "file-status error";
+      status.textContent = "Error: " + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── DESCARGAR PLANTILLA EXCEL ─────────────────────────────────────────────────
+function descargarPlantilla() {
+  const plantilla = [
+    ["Name","Dia","Operación","Estatus Cierre","Responsable","Areas","PAISES","Estatus Entregable"],
+    ["DEPRECIACIÓN PAISES SCAC",27,"SCAC","IN PROCESS","Luis Forero","Activos Fijos SCAC","Panamá, Nicaragua, Colombia","Cierre"],
+    ["IFRS CONSOLIDADO",15,"SCAC","COMPLETED","Ivonne Hernandez","Consolidación SCAC","SCAC","Postcierre"],
+    ["COT",31,"MEXICO","COMPLETED","John Pulido","Tesorería México","México","Cierre"],
+    ["INVERSION",31,"MEXICO","NOT STARTED","John Pulido","Tesorería México","México","Cierre"],
+    ["CANDADEO PAISES SCAC",15,"SCAC","NOT APPLICABLE","Ivonne Hernandez","Consolidación SCAC","SCAC","Postcierre"],
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(plantilla);
+  // Ancho de columnas
+  ws["!cols"] = [{wch:45},{wch:6},{wch:12},{wch:18},{wch:20},{wch:28},{wch:40},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws, "Actividades");
+  XLSX.writeFile(wb, "Plantilla_Dashboard_R2R.xlsx");
+}
+
+// ── FILTROS DINÁMICOS ─────────────────────────────────────────────────────────
+function poblarSelect(id, valores, defaultLabel) {
+  const sel = document.getElementById(id);
+  const val = sel.value; // preservar selección actual
+  sel.innerHTML = `<option value="">${defaultLabel}</option>`;
+  [...new Set(valores.filter(Boolean))].sort().forEach(v => {
+    const o = document.createElement("option");
+    o.value = o.textContent = v;
+    if (v === val) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+// Parsea un group.title o string de fecha y devuelve { mes: 1-12|null, anio: 2024|null }
+function parsearPeriodo(str) {
+  if (!str) return { mes: null, anio: null };
+  const s = str.trim();
+  // Formato "YYYY-MM" o "YYYY/MM"
+  let m = s.match(/^(\d{4})[-\/](\d{1,2})$/);
+  if (m) return { anio: parseInt(m[1]), mes: parseInt(m[2]) };
+  // Formato "MM-YYYY" o "MM/YYYY"
+  m = s.match(/^(\d{1,2})[-\/](\d{4})$/);
+  if (m) return { anio: parseInt(m[2]), mes: parseInt(m[1]) };
+  // Año solo "2025"
+  m = s.match(/^(\d{4})$/);
+  if (m) return { anio: parseInt(m[1]), mes: null };
+  // Nombre de mes en español o inglés + año
+  const MESES_MAP = {
+    enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,
+    julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12,
+    january:1,february:2,march:3,april:4,may:5,june:6,
+    july:7,august:8,september:9,october:10,november:11,december:12,
+    jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12
+  };
+  const partes = s.toLowerCase().split(/[\s\-_\/,]+/);
+  let anio = null, mes = null;
+  partes.forEach(p => {
+    if (MESES_MAP[p]) mes = MESES_MAP[p];
+    if (/^\d{4}$/.test(p)) anio = parseInt(p);
+  });
+  return { mes, anio };
+}
+
+function reconstruirFiltros() {
+  poblarSelect("f-op",   DATA.map(d=>d.op),   t("f_op_all"));
+  poblarSelect("f-area", DATA.map(d=>d.area), t("f_area_all"));
+  poblarSelect("f-resp", DATA.map(d=>d.resp), t("f_resp_all"));
+
+  // Tipo (Cierre / Postcierre)
+  const selTipo = document.getElementById("f-tipo");
+  const curTipo = selTipo.value;
+  selTipo.innerHTML = `<option value="">${t("f_tipo_all")}</option>`;
+  [["cierre", t("tipo_cierre")], ["poscierre", t("tipo_poscierre")]].forEach(([val, lbl]) => {
+    const o = document.createElement("option");
+    o.value = val; o.textContent = lbl;
+    if (val === curTipo) o.selected = true;
+    selTipo.appendChild(o);
+  });
+
+  // Estado
+  const selEst = document.getElementById("f-estado");
+  const curEst = selEst.value;
+  selEst.innerHTML = `<option value="">${t("f_estado_all")}</option>`;
+  ["COMPLETED","IN PROCESS","NOT STARTED"].forEach(e => {
+    const o = document.createElement("option");
+    o.value = e; o.textContent = ELABELS(e);
+    if(e===curEst) o.selected=true;
+    selEst.appendChild(o);
+  });
+
+  // País
+  const todosLosPaises = [];
+  DATA.forEach(d => d.pais.split(",").forEach(p => { const tp=p.trim(); if(tp) todosLosPaises.push(tp); }));
+  poblarSelect("f-pais", todosLosPaises, t("f_pais_all"));
+
+  // Día (ordenado numéricamente)
+  const selDia = document.getElementById("f-dia");
+  const curDia = selDia.value;
+  selDia.innerHTML = `<option value="">${t("f_dia_all")}</option>`;
+  [...new Set(DATA.map(d=>d.dia).filter(d=>d!==null&&d!==""))].sort((a,b)=>a-b).forEach(d => {
+    const o = document.createElement("option");
+    o.value = d; o.textContent = t("dia_prefix") + d;
+    if(String(d)===curDia) o.selected=true;
+    selDia.appendChild(o);
+  });
+
+  // Año (ordenado numéricamente desc)
+  const selAnio = document.getElementById("f-anio");
+  const curAnio = selAnio.value;
+  selAnio.innerHTML = `<option value="">${t("f_anio_all")}</option>`;
+  [...new Set(DATA.map(d=>d.anio).filter(Boolean))].sort((a,b)=>b-a).forEach(a => {
+    const o = document.createElement("option");
+    o.value = a; o.textContent = a;
+    if(String(a)===curAnio) o.selected=true;
+    selAnio.appendChild(o);
+  });
+
+  // Mes (ordenado 1-12, mostrado con nombre)
+  const MESES_ES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const MESES_EN = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
+  const MESES    = LANG === "es" ? MESES_ES : MESES_EN;
+  const selMes = document.getElementById("f-mes");
+  const curMes = selMes.value;
+  selMes.innerHTML = `<option value="">${t("f_mes_all")}</option>`;
+  [...new Set(DATA.map(d=>d.mes).filter(Boolean))].sort((a,b)=>a-b).forEach(m => {
+    const o = document.createElement("option");
+    o.value = m; o.textContent = MESES[m] || m;
+    if(String(m)===curMes) o.selected=true;
+    selMes.appendChild(o);
+  });
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const BADGE     = {"COMPLETED":"b-comp","IN PROCESS":"b-proc","NOT STARTED":"b-ns"};
+const SEL_CLASS = {"COMPLETED":"s-comp","IN PROCESS":"s-proc","NOT STARTED":"s-ns"};
+function badge(e){ return `<span class="badge ${BADGE[e]||'b-na'}">${ELABELS(e)||e}</span>`; }
+
+// ── IDs EXACTOS DE COLUMNAS EN MONDAY (board 18432754378) ────────────────────
+const MON_COL = {
+  dia:    "numeric_mm7harfk",
+  op:     "color_mm7hebrq",
+  est:    "color_mm7hb2y8",   // recreada con 3 labels: COMPLETED(0) IN PROCESS(1) NOT STARTED(2)
+  resp:   "color_mm7hqeq0",
+  area:   "color_mm7hyq20",
+  pais:   "color_mm7hvr12",
+  com:    "text_mm7httv",
+  tipo:   "color_mm7h49bw"    // nueva columna: Cierre(0) Pos-Cierre(1)
+};
+// Labels de Monday → índice (status columns)
+const MON_EST_IDX  = {"COMPLETED": 0, "IN PROCESS": 1, "NOT STARTED": 2};
+const MON_TIPO_IDX = {"cierre": 0, "poscierre": 1, "": 5};
+const MON_OP_IDX   = {"SCAC": 0, "MEXICO": 1};
+const MON_RESP_IDX = {"Luis Forero": 0, "John Pulido": 1, "Ivonne Hernandez": 2};
+const MON_AREA_IDX = {
+  "Activos Fijos SCAC": 0, "Información Financiera SCAC": 1, "Tesoreria SCAC": 2,
+  "Consolidacion SCAC": 8, "Activos Fijos Mexico": 7, "Consolidacion Mexico": 3,
+  "Informacion Financiera Mexico": 4, "Tesoreria Mexico": 6
+};
+const MON_PAIS_IDX = {
+  "Colombia": 0, "Mexico": 1, "Panama": 2, "Haiti": 3, "Caribe": 4,
+  "Peru": 6, "Nicaragua": 7, "Puerto Rico": 8, "Sounthington": 9,
+  "Jamaica": 10, "Bahamas": 11
+};
+
+// Selects editables para cada campo
+function estSelect(dataIdx, currentEst) {
+  const opts = ["COMPLETED","IN PROCESS","NOT STARTED"]
+    .map(v => `<option value="${v}"${v===currentEst?" selected":""}>${ELABELS(v)||v}</option>`)
+    .join("");
+  const cls = SEL_CLASS[currentEst] || "s-na";
+  return `<select class="est-select ${cls}" data-idx="${dataIdx}" onchange="cambiarEstado(this)">${opts}</select>`;
+}
+
+function opSelect(dataIdx, currentOp) {
+  const opts = ["SCAC","MEXICO"].map(v => `<option value="${v}"${v===currentOp?" selected":""}>${v}</option>`).join("");
+  return `<select class="est-select" style="background:#e8f0fe;color:#1a56a0;border-radius:20px;border:none;min-width:90px" data-idx="${dataIdx}" onchange="cambiarOp(this)">${opts}</select>`;
+}
+
+function respSelect(dataIdx, currentResp) {
+  const resps = Object.keys(MON_RESP_IDX);
+  const opts = resps.map(v => `<option value="${v}"${v===currentResp?" selected":""}>${v}</option>`).join("");
+  return `<select class="est-select" style="background:#fdf4ff;color:#6b21a8;border-radius:20px;border:none;min-width:120px" data-idx="${dataIdx}" onchange="cambiarResp(this)">${opts}</select>`;
+}
+
+function areaSelect(dataIdx, currentArea) {
+  const areas = Object.keys(MON_AREA_IDX);
+  const opts = areas.map(v => `<option value="${v}"${v===currentArea?" selected":""}>${v}</option>`).join("");
+  return `<select class="est-select" style="background:#f0fdf4;color:#166534;border-radius:20px;border:none;width:100%;white-space:normal" data-idx="${dataIdx}" onchange="cambiarArea(this)">${opts}</select>`;
+}
+
+function paisSelect(dataIdx, currentPais) {
+  const paises = Object.keys(MON_PAIS_IDX);
+  const opts = paises.map(v => `<option value="${v}"${v===currentPais?" selected":""}>${v}</option>`).join("");
+  return `<select class="est-select" style="background:#fff7ed;color:#9a3412;border-radius:20px;border:none;width:100%;white-space:normal" data-idx="${dataIdx}" onchange="cambiarPais(this)">${opts}</select>`;
+}
+
+const TIPO_CLASS = {"cierre":"t-cierre","poscierre":"t-poscierre","":"t-none"};
+function normTipo(v) {
+  if (!v) return "";
+  const s = v.trim().toLowerCase();
+  if (s === "cierre" || s === "close") return "cierre";
+  if (s === "poscierre" || s === "pos-cierre" || s === "postcierre" || s === "post-cierre" || s === "post-close" || s === "post close") return "poscierre";
+  return "";
+}
+function tipoSelect(dataIdx, currentTipo) {
+  const norm = normTipo(currentTipo);
+  const cls  = TIPO_CLASS[norm] || "t-none";
+  const opts = [
+    `<option value=""${norm===""?" selected":""}>—</option>`,
+    `<option value="cierre"${norm==="cierre"?" selected":""}>${t("tipo_cierre")}</option>`,
+    `<option value="poscierre"${norm==="poscierre"?" selected":""}>${t("tipo_poscierre")}</option>`,
+  ].join("");
+  return `<select class="tipo-select ${cls}" data-idx="${dataIdx}" onchange="cambiarTipo(this)">${opts}</select>`;
+}
+function pct(n,t){ return t ? Math.round(n/t*100)+"%" : "0%"; }
+
+function filtrar() {
+  const op   = document.getElementById("f-op").value;
+  const area = document.getElementById("f-area").value;
+  const resp = document.getElementById("f-resp").value;
+  const est  = document.getElementById("f-estado").value;
+  const pais = document.getElementById("f-pais").value;
+  const dia  = document.getElementById("f-dia").value;
+  const tipo = document.getElementById("f-tipo").value;
+  const anio = document.getElementById("f-anio").value;
+  const mes  = document.getElementById("f-mes").value;
+  const q    = document.getElementById("f-search").value.trim().toLowerCase();
+  return DATA.filter(d =>
+    (!op   || d.op   === op)   &&
+    (!area || d.area === area) &&
+    (!resp || d.resp === resp) &&
+    (!est  || d.est  === est)  &&
+    (!pais || d.pais.includes(pais)) &&
+    (!dia  || String(d.dia) === dia) &&
+    (!tipo || d.tipo === tipo) &&
+    (!anio || String(d.anio) === anio) &&
+    (!mes  || String(d.mes)  === mes)  &&
+    (!q    || d.n.toLowerCase().includes(q))
+  );
+}
+
+// ── RENDER PRINCIPAL ──────────────────────────────────────────────────────────
+// ── PAGINACIÓN DE LA TABLA ────────────────────────────────────────────────────
+let _visCache   = [];
+let _pgCurrent  = 0;
+
+function renderTablaPagina() {
+  const pageSize = parseInt(document.getElementById("pg-size").value) || 0;
+  const vis      = _visCache;
+  const tbody    = document.getElementById("tbody");
+  const pgDiv    = document.getElementById("tbl-pagination");
+
+  if (!vis.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#57606a;padding:18px">${t("tbl_no_results")}</td></tr>`;
+    pgDiv.innerHTML = "";
+    return;
+  }
+
+  const total     = vis.length;
+  const pages     = pageSize ? Math.ceil(total / pageSize) : 1;
+  if (_pgCurrent >= pages) _pgCurrent = pages - 1;
+
+  const start  = pageSize ? _pgCurrent * pageSize : 0;
+  const end    = pageSize ? Math.min(start + pageSize, total) : total;
+  const pagina = vis.slice(start, end);
+
+  tbody.innerHTML = pagina.map((d, i) => {
+    const di  = DATA.indexOf(d);
+    const num = start + i + 1;
+    return `<tr>
+      <td style="color:#57606a;font-size:11px">${num}</td>
+      <td class="td-act" title="${d.n}"><span class="act-name"><strong>${d.n.charAt(0).toUpperCase()+d.n.slice(1).toLowerCase()}</strong></span></td>
+      <td style="color:#57606a">${d.dia??'—'}</td>
+      <td>${opSelect(di, d.op)}</td>
+      <td class="td-area">${areaSelect(di, d.area)}</td>
+      <td>${respSelect(di, d.resp)}</td>
+      <td>${paisSelect(di, d.pais)}</td>
+      <td class="td-est">${estSelect(di, d.est)}</td>
+      <td class="td-tipo">${tipoSelect(di, d.tipo)}</td>
+      <td><textarea class="com-input" data-idx="${di}" rows="1" placeholder="—" onchange="guardarComentario(this)" oninput="autoResize(this)">${d.com||''}</textarea></td>
+    </tr>`;
+  }).join("");
+
+  // Paginador
+  if (!pageSize || pages <= 1) { pgDiv.innerHTML = ""; return; }
+
+  // Rango de páginas visibles (ventana de 5 alrededor de la actual)
+  const MAX_BTNS = 5;
+  let pgStart = Math.max(0, _pgCurrent - Math.floor(MAX_BTNS/2));
+  let pgEnd   = Math.min(pages, pgStart + MAX_BTNS);
+  if (pgEnd - pgStart < MAX_BTNS) pgStart = Math.max(0, pgEnd - MAX_BTNS);
+
+  let html = `<button onclick="irPagina(0)" ${_pgCurrent===0?'disabled':''}>«</button>`;
+  html += `<button onclick="irPagina(${_pgCurrent-1})" ${_pgCurrent===0?'disabled':''}>‹</button>`;
+  for (let p = pgStart; p < pgEnd; p++) {
+    html += `<button class="${p===_pgCurrent?'active':''}" onclick="irPagina(${p})">${p+1}</button>`;
+  }
+  html += `<button onclick="irPagina(${_pgCurrent+1})" ${_pgCurrent>=pages-1?'disabled':''}>›</button>`;
+  html += `<button onclick="irPagina(${pages-1})" ${_pgCurrent>=pages-1?'disabled':''}>»</button>`;
+  html += `<span class="pg-info">${start+1}–${end} / ${total}</span>`;
+  pgDiv.innerHTML = html;
+}
+
+function irPagina(p) {
+  _pgCurrent = p;
+  renderTablaPagina();
+  document.getElementById("tbody").closest(".table-container").scrollIntoView({ behavior:"smooth", block:"nearest" });
+}
+
+function render() {
+  const vis  = filtrar();
+  const tot  = vis.length;
+  const comp = vis.filter(d=>d.est==="COMPLETED").length;
+  const proc = vis.filter(d=>d.est==="IN PROCESS").length;
+  const ns   = vis.filter(d=>d.est==="NOT STARTED").length;
+  const av   = tot ? Math.round(comp/tot*100) : 0;
+
+  document.getElementById("header-stats").innerHTML =
+    `${t("hdr_total")} <strong>${DATA.length}</strong> ${t("hdr_activities")} &nbsp;|&nbsp; ${t("hdr_completed")}: <strong>${DATA.filter(d=>d.est==="COMPLETED").length}</strong>`;
+
+  document.getElementById("k-tot").textContent  = tot;
+  document.getElementById("k-comp").textContent = comp;
+  document.getElementById("k-proc").textContent = proc;
+  document.getElementById("k-ns").textContent   = ns;
+  document.getElementById("k-tot-p").textContent  = t("kpi_filter");
+  document.getElementById("k-comp-p").textContent = pct(comp,tot)+" "+t("kpi_of_total");
+  document.getElementById("k-proc-p").textContent = pct(proc,tot)+" "+t("kpi_of_total");
+  document.getElementById("k-ns-p").textContent   = pct(ns,tot)+" "+t("kpi_of_total");
+
+  const bar = document.getElementById("progBar");
+  bar.style.width = av+"%";
+  bar.textContent = av+"%";
+  document.getElementById("prog-izq").textContent = `${comp} ${t("prog_of")} ${tot} ${t("prog_activities")}`;
+  document.getElementById("prog-der").textContent = `${av}% ${t("prog_completed")}`;
+
+  const areas = [...new Set(DATA.map(d=>d.area))].sort();
+  document.getElementById("area-breakdown").innerHTML = areas.map(a=>{
+    const ad=vis.filter(d=>d.area===a); if(!ad.length) return "";
+    const ac=ad.filter(d=>d.est==="COMPLETED").length;
+    const ap=Math.round(ac/ad.length*100);
+    return `<div class="area-row"><span class="area-name" title="${a}">${a}</span>
+      <div class="area-bar-w"><div class="area-bar" style="width:${ap}%"></div></div>
+      <span class="area-pct">${ap}%</span></div>`;
+  }).join("")||`<p style='font-size:12px;color:#57606a'>${t("sin_datos")}</p>`;
+
+  document.getElementById("res-cnt").textContent=`${t("tbl_showing")} ${vis.length} ${t("tbl_of")} ${DATA.length} ${t("tbl_activities")}`;
+  // Guardar resultado filtrado para paginación
+  _visCache = vis;
+  _pgCurrent = 0;
+  renderTablaPagina();
+
+  const locale = LANG==="es" ? "es-MX" : "en-US";
+  const ahora=new Date();
+  document.getElementById("ts").textContent=t("ts_prefix")+" "+
+    ahora.toLocaleDateString(locale,{day:"2-digit",month:"short",year:"numeric"})+" "+
+    ahora.toLocaleTimeString(locale,{hour:"2-digit",minute:"2-digit"});
+
+  const alertas=[];
+  const noIni=vis.filter(d=>d.est==="NOT STARTED");
+  if(noIni.length) alertas.push({cls:"al-r",msg:`<strong>${noIni.length} ${t("al_no_started_a")}</strong> ${t("al_no_started_b")}`});
+  const carga={};
+  vis.filter(d=>d.est==="NOT STARTED").forEach(d=>{carga[d.resp]=(carga[d.resp]||0)+1;});
+  const top=Object.entries(carga).sort((a,b)=>b[1]-a[1])[0];
+  if(top) alertas.push({cls:"",msg:`<strong>${top[0]}</strong> ${t("al_pending")} ${top[1]} ${t("al_tasks")}`});
+  if(av===100&&tot>0) alertas.push({cls:"al-g",msg:`<strong>${t("al_done")}</strong>`});
+  document.getElementById("al-list").innerHTML=alertas.length
+    ? alertas.map(a=>`<div class="al ${a.cls}">${a.msg}</div>`).join("")
+    : `<p style="font-size:12px;color:#57606a;padding:6px 0">${t("al_none")}</p>`;
+
+  // Gráficas
+  renderGraficas(vis);
+}
+
+// ── ESCRITURA EN MONDAY.COM (DIRECTA / BACKEND) ───────────────────────────────
+
+async function writeMondayCell(mondayId, columnId, value, feedbackEl) {
+  if (!mondayId || !columnId) return;
+  const token = getMondayToken();
+  const boardId = getMondayBoardId();
+
+  try {
+    if (feedbackEl) feedbackEl.style.outline = "2px solid #f59e0b";
+
+    if (token) {
+      // Escritura directa vía API de Monday con el token configurado
+      const valueStr = JSON.stringify(JSON.stringify(value));
+      const mutation = `mutation {
+        change_column_value(
+          item_id: ${mondayId},
+          board_id: ${boardId},
+          column_id: "${columnId}",
+          value: ${valueStr}
+        ) { id }
+      }`;
+      const res = await fetch(MONDAY_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token,
+          "API-Version": "2024-01"
+        },
+        body: JSON.stringify({ query: mutation })
+      });
+      const json = await res.json();
+      if (json.errors && json.errors.length) throw new Error(json.errors[0].message);
+    } else {
+      // Fallback a servidor local backend
+      const res = await fetch("/api/update-cell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: mondayId, columnId, value })
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || `HTTP ${res.status}`);
+    }
+
+    if (feedbackEl) { feedbackEl.style.outline = "2px solid #28a745"; setTimeout(()=>{ feedbackEl.style.outline=""; }, 1500); }
+  } catch(err) {
+    console.error("Error al actualizar campo en Monday:", err.message);
+    if (feedbackEl) { feedbackEl.style.outline = "2px solid #dc3545"; setTimeout(()=>{ feedbackEl.style.outline=""; }, 2000); }
+  }
+}
+
+// Comentarios → columna text (valor plano)
+function guardarComentario(ta) {
+  const idx = parseInt(ta.dataset.idx);
+  if (isNaN(idx) || !DATA[idx]) return;
+  DATA[idx].com = ta.value.trim();
+  const item = DATA[idx];
+  if (item.mondayId) writeMondayCell(item.mondayId, MON_COL.com, DATA[idx].com, ta);
+}
+
+function autoResize(ta) {
+  ta.style.height = "auto";
+  ta.style.height = ta.scrollHeight + "px";
+}
+
+// Estatus Entregable/Tipo → columna color_mm7h49bw (Cierre=0, Pos-Cierre=1)
+function cambiarTipo(sel) {
+  const idx = parseInt(sel.dataset.idx);
+  if (isNaN(idx) || !DATA[idx]) return;
+  DATA[idx].tipo = sel.value;
+  sel.className = "tipo-select " + (TIPO_CLASS[sel.value] || "t-none");
+  const item = DATA[idx];
+  const monIdx = MON_TIPO_IDX[sel.value] ?? 5;
+  if (item.mondayId) writeMondayCell(item.mondayId, MON_COL.tipo, { index: monIdx }, sel);
+}
+
+// Estatus Cierre → status column con índice numérico
+function cambiarEstado(sel) {
+  const idx = parseInt(sel.dataset.idx);
+  if (isNaN(idx) || !DATA[idx]) return;
+  DATA[idx].est = sel.value;
+  sel.className = "est-select " + (SEL_CLASS[sel.value] || "s-na");
+  renderStats();
+  const item = DATA[idx];
+  const monIdx = MON_EST_IDX[sel.value] ?? 5;
+  if (item.mondayId) writeMondayCell(item.mondayId, MON_COL.est, { index: monIdx }, sel);
+}
+
+// Operación → status column
+function cambiarOp(sel) {
+  const idx = parseInt(sel.dataset.idx);
+  if (isNaN(idx) || !DATA[idx]) return;
+  DATA[idx].op = sel.value;
+  const item = DATA[idx];
+  const monIdx = MON_OP_IDX[sel.value] ?? 5;
+  if (item.mondayId) writeMondayCell(item.mondayId, MON_COL.op, { index: monIdx }, sel);
+}
+
+// Responsable → status column
+function cambiarResp(sel) {
+  const idx = parseInt(sel.dataset.idx);
+  if (isNaN(idx) || !DATA[idx]) return;
+  DATA[idx].resp = sel.value;
+  const item = DATA[idx];
+  const monIdx = MON_RESP_IDX[sel.value] ?? 5;
+  if (item.mondayId) writeMondayCell(item.mondayId, MON_COL.resp, { index: monIdx }, sel);
+}
+
+// Área → status column
+function cambiarArea(sel) {
+  const idx = parseInt(sel.dataset.idx);
+  if (isNaN(idx) || !DATA[idx]) return;
+  DATA[idx].area = sel.value;
+  renderStats();
+  const item = DATA[idx];
+  const monIdx = MON_AREA_IDX[sel.value] ?? 5;
+  if (item.mondayId) writeMondayCell(item.mondayId, MON_COL.area, { index: monIdx }, sel);
+}
+
+// País → status column
+function cambiarPais(sel) {
+  const idx = parseInt(sel.dataset.idx);
+  if (isNaN(idx) || !DATA[idx]) return;
+  DATA[idx].pais = sel.value;
+  const item = DATA[idx];
+  const monIdx = MON_PAIS_IDX[sel.value] ?? 5;
+  if (item.mondayId) writeMondayCell(item.mondayId, MON_COL.pais, { index: monIdx }, sel);
+}
+
+function renderStats() {
+  const vis  = filtrar();
+  const tot  = vis.length;
+  const comp = vis.filter(d=>d.est==="COMPLETED").length;
+  const proc = vis.filter(d=>d.est==="IN PROCESS").length;
+  const ns   = vis.filter(d=>d.est==="NOT STARTED").length;
+  const av   = tot ? Math.round(comp/tot*100) : 0;
+
+  document.getElementById("header-stats").innerHTML =
+    `${t("hdr_total")} <strong>${DATA.length}</strong> ${t("hdr_activities")} &nbsp;|&nbsp; ${t("hdr_completed")}: <strong>${DATA.filter(d=>d.est==="COMPLETED").length}</strong>`;
+
+  document.getElementById("k-tot").textContent  = tot;
+  document.getElementById("k-comp").textContent = comp;
+  document.getElementById("k-proc").textContent = proc;
+  document.getElementById("k-ns").textContent   = ns;
+  document.getElementById("k-tot-p").textContent  = t("kpi_filter");
+  document.getElementById("k-comp-p").textContent = pct(comp,tot)+" "+t("kpi_of_total");
+  document.getElementById("k-proc-p").textContent = pct(proc,tot)+" "+t("kpi_of_total");
+  document.getElementById("k-ns-p").textContent   = pct(ns,tot)+" "+t("kpi_of_total");
+
+  const bar = document.getElementById("progBar");
+  bar.style.width = av+"%"; bar.textContent = av+"%";
+  document.getElementById("prog-izq").textContent = `${comp} ${t("prog_of")} ${tot} ${t("prog_activities")}`;
+  document.getElementById("prog-der").textContent = `${av}% ${t("prog_completed")}`;
+
+  const areas = [...new Set(DATA.map(d=>d.area))].sort();
+  document.getElementById("area-breakdown").innerHTML = areas.map(a=>{
+    const ad=vis.filter(d=>d.area===a); if(!ad.length) return "";
+    const ac=ad.filter(d=>d.est==="COMPLETED").length;
+    const ap=Math.round(ac/ad.length*100);
+    return `<div class="area-row"><span class="area-name" title="${a}">${a}</span>
+      <div class="area-bar-w"><div class="area-bar" style="width:${ap}%"></div></div>
+      <span class="area-pct">${ap}%</span></div>`;
+  }).join("")||`<p style='font-size:12px;color:#57606a'>${t("sin_datos")}</p>`;
+
+  const noIni=vis.filter(d=>d.est==="NOT STARTED");
+  const alertas=[];
+  if(noIni.length) alertas.push({cls:"al-r",msg:`<strong>${noIni.length} ${t("al_no_started_a")}</strong> ${t("al_no_started_b")}`});
+  const carga={};
+  vis.filter(d=>d.est==="NOT STARTED").forEach(d=>{carga[d.resp]=(carga[d.resp]||0)+1;});
+  const top=Object.entries(carga).sort((a,b)=>b[1]-a[1])[0];
+  if(top) alertas.push({cls:"",msg:`<strong>${top[0]}</strong> ${t("al_pending")} ${top[1]} ${t("al_tasks")}`});
+  if(av===100&&tot>0) alertas.push({cls:"al-g",msg:`<strong>${t("al_done")}</strong>`});
+  document.getElementById("al-list").innerHTML=alertas.length
+    ? alertas.map(a=>`<div class="al ${a.cls}">${a.msg}</div>`).join("")
+    : `<p style="font-size:12px;color:#57606a;padding:6px 0">${t("al_none")}</p>`;
+
+  renderGraficas(vis);
+}
+
+// ── GRÁFICAS SVG ──────────────────────────────────────────────────────────────
+const C = {
+  COMPLETED:    "#28a745",
+  "IN PROCESS": "#ffc107",
+  "NOT STARTED":"#dc3545"
+};
+const ESTADOS = ["COMPLETED","IN PROCESS","NOT STARTED"];
+function ELABELS(est){ return {"COMPLETED":t("kpi_comp"),"IN PROCESS":t("kpi_proc"),"NOT STARTED":t("kpi_ns")}[est]||est; }
+
+// Tooltip
+const tip = document.getElementById("svg-tip");
+function showTip(e, html){ tip.innerHTML=html; tip.style.display="block"; moveTip(e); }
+function moveTip(e){ tip.style.left=(e.clientX+14)+"px"; tip.style.top=(e.clientY-10)+"px"; }
+function hideTip(){ tip.style.display="none"; }
+
+// ── DONA ──────────────────────────────────────────────────────────────────────
+// ── Helper: aplicar filtro desde gráfica y refrescar ─────────────────────────
+function _chartFilter(selectId, value) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  // toggle: si ya está activo, limpiar; si no, aplicar
+  el.value = el.value === value ? "" : value;
+  _pgCurrent = 0;
+  render();
+  // scroll suave a la tabla
+  document.querySelector(".table-container")?.scrollIntoView({ behavior:"smooth", block:"nearest" });
+}
+
+// ── DONA ESTADO GENERAL ───────────────────────────────────────────────────────
+function renderDona(vis) {
+  const counts = {};
+  ESTADOS.forEach(e=>{ counts[e]=vis.filter(d=>d.est===e).length; });
+  const tot = vis.length;
+  const R=70, r=42, cx=88, cy=88, size=176;
+
+  if(!tot){ document.getElementById("chart-dona").innerHTML=`<p style='font-size:12px;color:#57606a;padding:20px 0'>${t("sin_datos")}</p>`; return; }
+
+  let startAngle = -Math.PI/2;
+  let slices = `<g class="ch-group">`;
+  ESTADOS.forEach((est,ei)=>{
+    const n = counts[est];
+    if(!n) return;
+    const angle = (n/tot)*2*Math.PI;
+    const end   = startAngle + angle;
+    const x1=cx+R*Math.cos(startAngle), y1=cy+R*Math.sin(startAngle);
+    const x2=cx+R*Math.cos(end),        y2=cy+R*Math.sin(end);
+    const ix1=cx+r*Math.cos(startAngle),iy1=cy+r*Math.sin(startAngle);
+    const ix2=cx+r*Math.cos(end),       iy2=cy+r*Math.sin(end);
+    const large = angle>Math.PI?1:0;
+    const pct   = Math.round(n/tot*100);
+    const path  = `M${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} L${ix2},${iy2} A${r},${r},0,${large},0,${ix1},${iy1} Z`;
+    const delay = ei*0.07;
+    slices += `<path d="${path}" fill="${C[est]}" class="ch-clickable ch-fade" style="animation-delay:${delay}s"
+      data-lbl="${ELABELS(est)}: ${n} (${pct}%) — clic para filtrar"
+      onclick="_chartFilter('f-estado','${est}')"
+      onmouseenter="showTip(event,this.dataset.lbl)"
+      onmousemove="moveTip(event)"
+      onmouseleave="hideTip()"
+    />`;
+    startAngle = end;
+  });
+  slices += `</g>`;
+
+  const compPct = Math.round((counts["COMPLETED"]/tot)*100);
+  slices += `<text x="${cx}" y="${cy-8}" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2328" class="ch-fade">${compPct}%</text>`;
+  slices += `<text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="10" fill="#57606a" class="ch-fade">completado</text>`;
+
+  document.getElementById("chart-dona").innerHTML=
+    `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${slices}</svg>`;
+
+  document.getElementById("dona-legend").innerHTML = ESTADOS.map(e=>{
+    const n=counts[e]; if(!n) return "";
+    const activo = document.getElementById("f-estado")?.value === e;
+    return `<div class="legend-item${activo?' legend-active':''}" onclick="_chartFilter('f-estado','${e}')" title="Filtrar por ${ELABELS(e)}">
+      <div class="legend-dot" style="background:${C[e]}"></div>${ELABELS(e)}: <strong>${n}</strong>
+    </div>`;
+  }).join("");
+  document.getElementById("dona-total").textContent = `${t("hdr_total")} ${tot} ${t("hdr_activities")}`;
+}
+
+// ── BARRAS APILADAS POR ÁREA ───────────────────────────────────────────────────
+function renderAreasBars(vis) {
+  const areas = [...new Set(DATA.map(d=>d.area))].sort();
+  const W=480, BAR=20, GAP=10, LEFT=200, RIGHT=56;
+  const H = areas.length*(BAR+GAP)+20;
+  const maxTot = Math.max(...areas.map(a=>vis.filter(d=>d.area===a).length),1);
+  const usableW = W-LEFT-RIGHT;
+  const activeArea = document.getElementById("f-area")?.value;
+
+  let rows="";
+  areas.forEach((area,i)=>{
+    const y = 10 + i*(BAR+GAP);
+    const aData = vis.filter(d=>d.area===area);
+    const tot   = aData.length;
+    const isActive = activeArea === area;
+    const dim = !isActive && activeArea ? " opacity=\"0.38\"" : "";
+    const delay = i*0.04;
+
+    rows += `<g class="ch-group" onclick="_chartFilter('f-area',${JSON.stringify(area)})" style="cursor:pointer">`;
+    // fondo hover
+    rows += `<rect x="0" y="${y-2}" width="${W}" height="${BAR+4}" fill="transparent" rx="3"/>`;
+    // nombre área
+    const short = area.length>27 ? area.slice(0,25)+"…" : area;
+    rows += `<text x="${LEFT-8}" y="${y+BAR/2+4}" text-anchor="end" font-size="10" font-weight="${isActive?'700':'400'}" fill="${isActive?'#003366':'#57606a'}">${short}</text>`;
+
+    if(!tot){
+      rows += `<rect x="${LEFT}" y="${y}" width="${usableW}" height="${BAR}" fill="#f0f2f5" rx="3"/>`;
+    } else {
+      let x=LEFT;
+      // fondo gris
+      rows += `<rect x="${LEFT}" y="${y}" width="${usableW}" height="${BAR}" fill="#f0f2f5" rx="3"/>`;
+      ESTADOS.forEach((est,ei)=>{
+        const n = aData.filter(d=>d.est===est).length;
+        if(!n) return;
+        const w = Math.round((n/maxTot)*usableW);
+        const pct = Math.round(n/tot*100);
+        rows += `<rect x="${x}" y="${y}" width="${w}" height="${BAR}" fill="${C[est]}" rx="3"
+          class="ch-clickable ch-bar" style="animation-delay:${delay+ei*0.05}s"${dim}
+          data-lbl="${area} · ${ELABELS(est)}: ${n} (${pct}%) — clic para filtrar"
+          onmouseenter="showTip(event,this.dataset.lbl)"
+          onmousemove="moveTip(event)"
+          onmouseleave="hideTip()"
+        />`;
+        if(w>18) rows+=`<text x="${x+w/2}" y="${y+BAR/2+4}" text-anchor="middle" font-size="9" fill="white" pointer-events="none">${n}</text>`;
+        x+=w;
+      });
+      rows+=`<text x="${x+4}" y="${y+BAR/2+4}" font-size="10" fill="#57606a" pointer-events="none">${tot}</text>`;
+    }
+    rows += `</g>`;
+  });
+
+  document.getElementById("chart-areas").innerHTML=
+    `<div style="overflow-x:auto"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${rows}</svg></div>`;
+
+  document.getElementById("areas-legend").innerHTML = ESTADOS.map(e=>
+    `<div class="legend-item" onclick="_chartFilter('f-estado','${e}')" title="Filtrar estado ${ELABELS(e)}">
+      <div class="legend-dot" style="background:${C[e]}"></div>${ELABELS(e)}
+    </div>`
+  ).join("");
+}
+
+// ── BARRAS RESPONSABLE ────────────────────────────────────────────────────────
+function renderRespBars(vis) {
+  const resps = [...new Set(DATA.map(d=>d.resp))].sort();
+  const W=420, BAR=24, GAP=14, LEFT=160, RIGHT=66;
+  const usableW = W-LEFT-RIGHT;
+  const H = resps.length*(BAR+GAP)+20;
+  const activeResp = document.getElementById("f-resp")?.value;
+
+  let bars="";
+  resps.forEach((resp,i)=>{
+    const y=10+i*(BAR+GAP);
+    const rd=vis.filter(d=>d.resp===resp);
+    const tot=rd.length;
+    const isActive = activeResp === resp;
+    const delay = i*0.06;
+
+    // fondo clickeable
+    bars+=`<rect x="0" y="${y-2}" width="${W}" height="${BAR+4}" fill="transparent" rx="3" style="cursor:pointer"
+      onclick="_chartFilter('f-resp',${JSON.stringify(resp)})"/>`;
+    bars+=`<text x="${LEFT-8}" y="${y+BAR/2+4}" text-anchor="end" font-size="11" font-weight="${isActive?'700':'400'}" fill="${isActive?'#003366':'#57606a'}" style="cursor:pointer"
+      onclick="_chartFilter('f-resp',${JSON.stringify(resp)})">${resp}</text>`;
+
+    // fondo gris
+    bars+=`<rect x="${LEFT}" y="${y}" width="${usableW}" height="${BAR}" fill="#e5e7eb" rx="5"/>`;
+
+    if(!tot){
+      bars+=`<text x="${LEFT+6}" y="${y+BAR/2+4}" font-size="10" fill="#adb5bd">Sin datos</text>`;
+      return;
+    }
+    const comp=rd.filter(d=>d.est==="COMPLETED").length;
+    const pp=Math.round(comp/tot*100);
+    const w=Math.round(pp/100*usableW);
+
+    if(w>0){
+      bars+=`<rect x="${LEFT}" y="${y}" width="${w}" height="${BAR}" fill="#7c5cd8" rx="5"
+        class="ch-bar ch-clickable" style="animation-delay:${delay}s"
+        data-lbl="${resp}: ${comp}/${tot} completadas (${pp}%) — clic para filtrar"
+        onclick="_chartFilter('f-resp',${JSON.stringify(resp)})"
+        onmouseenter="showTip(event,this.dataset.lbl)"
+        onmousemove="moveTip(event)"
+        onmouseleave="hideTip()"
+      />`;
+      // etiqueta % dentro si hay espacio
+      if(w>32) bars+=`<text x="${LEFT+w/2}" y="${y+BAR/2+4}" text-anchor="middle" font-size="10" font-weight="700" fill="white" pointer-events="none">${pp}%</text>`;
+    }
+    // % al lado derecho
+    bars+=`<text x="${LEFT+w+6}" y="${y+BAR/2+4}" font-size="11" font-weight="700" fill="#1f2328" pointer-events="none">${pp}%</text>`;
+    // total
+    bars+=`<text x="${W}" y="${y+BAR/2+4}" text-anchor="end" font-size="10" fill="#57606a" pointer-events="none">${tot} act.</text>`;
+  });
+
+  document.getElementById("chart-resp").innerHTML=
+    `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg>`;
+}
+
+// ── BARRAS POR OPERACIÓN (% por estado) ──────────────────────────────────────
+function renderOpBars(vis) {
+  const ops = [...new Set(DATA.map(d=>d.op))].sort();
+  const W=440, BAR=38, GAP=26, LEFT=88, RIGHT=54;
+  const H = ops.length*(BAR+GAP) + 32;
+  const usableW = W-LEFT-RIGHT;
+  const activeOp = document.getElementById("f-op")?.value;
+
+  let svg="";
+  // Líneas guía verticales
+  [25,50,75,100].forEach(g=>{
+    const gx = LEFT + Math.round(g/100*usableW);
+    svg+=`<line x1="${gx}" y1="0" x2="${gx}" y2="${H-16}" stroke="#f0f2f5" stroke-width="1"/>`;
+    svg+=`<text x="${gx}" y="${H-4}" text-anchor="middle" font-size="9" fill="#c8d0d8">${g}%</text>`;
+  });
+
+  ops.forEach((op,oi)=>{
+    const y = 10 + oi*(BAR+GAP);
+    const od = vis.filter(d=>d.op===op);
+    const tot = od.length;
+    const isActive = activeOp === op;
+    if(!tot) return;
+
+    // área clickeable
+    svg+=`<rect x="0" y="${y-3}" width="${W}" height="${BAR+6}" fill="transparent" rx="4" style="cursor:pointer"
+      onclick="_chartFilter('f-op',${JSON.stringify(op)})"/>`;
+    // fondo
+    svg+=`<rect x="${LEFT}" y="${y}" width="${usableW}" height="${BAR}" fill="#f0f2f5" rx="7"/>`;
+
+    let xCursor = LEFT;
+    ESTADOS.forEach((est,ei)=>{
+      const n = od.filter(d=>d.est===est).length;
+      if(!n) return;
+      const pct = Math.round(n/tot*100);
+      const w = Math.round(pct/100*usableW);
+      const delay = oi*0.08 + ei*0.04;
+      svg+=`<rect x="${xCursor}" y="${y}" width="${w}" height="${BAR}" fill="${C[est]}" rx="7"
+        class="ch-bar ch-clickable" style="animation-delay:${delay}s"
+        data-lbl="${op} · ${ELABELS(est)}: ${n} act. (${pct}%) — clic para filtrar"
+        onclick="_chartFilter('f-op',${JSON.stringify(op)})"
+        onmouseenter="showTip(event,this.dataset.lbl)"
+        onmousemove="moveTip(event)"
+        onmouseleave="hideTip()"
+      />`;
+      if(w > 28) svg+=`<text x="${xCursor+w/2}" y="${y+BAR/2+4}" text-anchor="middle" font-size="11" font-weight="700" fill="white" pointer-events="none">${pct}%</text>`;
+      xCursor += w;
+    });
+
+    const pComp = Math.round((od.filter(d=>d.est==="COMPLETED").length/tot)*100);
+    svg+=`<text x="${LEFT+usableW+6}" y="${y+BAR/2+4}" font-size="11" font-weight="700" fill="#28a745">${pComp}%</text>`;
+    svg+=`<text x="${LEFT-8}" y="${y+BAR/2+2}" text-anchor="end" font-size="12" font-weight="${isActive?'700':'600'}" fill="${isActive?'#003366':'#1f2328'}" style="cursor:pointer"
+      onclick="_chartFilter('f-op',${JSON.stringify(op)})">${op}</text>`;
+    svg+=`<text x="${LEFT-8}" y="${y+BAR/2+14}" text-anchor="end" font-size="9" fill="#adb5bd" pointer-events="none">${tot} act.</text>`;
+  });
+
+  document.getElementById("chart-op").innerHTML=
+    `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${svg}</svg>`;
+
+  document.getElementById("op-legend").innerHTML = ESTADOS.map(e=>
+    `<div class="legend-item" onclick="_chartFilter('f-estado','${e}')" title="Filtrar estado ${ELABELS(e)}">
+      <div class="legend-dot" style="background:${C[e]}"></div>${ELABELS(e)}
+    </div>`
+  ).join("");
+}
+
+// ── BARRAS POR DÍA ────────────────────────────────────────────────────────────
+function renderDiaBars(vis) {
+  const dias = [...new Set(DATA.map(d=>d.dia).filter(d=>d!==null&&d!==""))].sort((a,b)=>a-b);
+  if(!dias.length){
+    document.getElementById("chart-dia").innerHTML=`<p style='font-size:12px;color:#57606a;padding:8px 0'>${t("sin_datos")}</p>`;
+    document.getElementById("dia-legend").innerHTML="";
+    return;
+  }
+  const BAR=24, GAP=8, LEFT=52, RIGHT=24;
+  const W = Math.max(480, dias.length*(BAR+GAP)+LEFT+RIGHT);
+  const H = 170;
+  const maxTot = Math.max(...dias.map(d=>vis.filter(r=>r.dia===d).length),1);
+  const usableH = H - 34;
+  const activeDia = document.getElementById("f-dia")?.value;
+
+  let bars="";
+  dias.forEach((dia,i)=>{
+    const x = LEFT + i*(BAR+GAP);
+    const dData = vis.filter(r=>r.dia===dia);
+    const tot = dData.length;
+    const isActive = String(dia) === String(activeDia);
+    let yBase = H - 22;
+
+    // área clickeable
+    bars+=`<rect x="${x-3}" y="0" width="${BAR+6}" height="${H}" fill="transparent" rx="2" style="cursor:pointer"
+      onclick="_chartFilter('f-dia',${JSON.stringify(String(dia))})"/>`;
+
+    // fondo columna
+    bars+=`<rect x="${x}" y="4" width="${BAR}" height="${H-26}" fill="#f7f8fa" rx="3"/>`;
+
+    ESTADOS.forEach((est,ei)=>{
+      const n = dData.filter(r=>r.est===est).length;
+      if(!n) return;
+      const h = Math.round((n/maxTot)*usableH);
+      yBase -= h;
+      const pct = Math.round(n/tot*100);
+      const delay = i*0.04 + ei*0.05;
+      bars+=`<rect x="${x}" y="${yBase}" width="${BAR}" height="${h}" fill="${C[est]}" rx="3"
+        class="ch-bar-y ch-clickable" style="animation-delay:${delay}s"
+        data-lbl="${t('dia_prefix')}${dia} · ${ELABELS(est)}: ${n} (${pct}%) — clic para filtrar"
+        onclick="_chartFilter('f-dia',${JSON.stringify(String(dia))})"
+        onmouseenter="showTip(event,this.dataset.lbl)"
+        onmousemove="moveTip(event)"
+        onmouseleave="hideTip()"
+      />`;
+    });
+    // total encima
+    if(tot) bars+=`<text x="${x+BAR/2}" y="${yBase-3}" text-anchor="middle" font-size="10" font-weight="700" fill="${isActive?'#003366':'#57606a'}">${tot}</text>`;
+    // etiqueta eje X
+    bars+=`<text x="${x+BAR/2}" y="${H-6}" text-anchor="middle" font-size="10" font-weight="${isActive?'700':'400'}" fill="${isActive?'#003366':'#57606a'}">${t("dia_prefix")}${dia}</text>`;
+  });
+
+  document.getElementById("chart-dia").innerHTML=
+    `<div style="overflow-x:auto"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg></div>`;
+
+  document.getElementById("dia-legend").innerHTML = ESTADOS.map(e=>
+    `<div class="legend-item" onclick="_chartFilter('f-estado','${e}')" title="Filtrar estado ${ELABELS(e)}">
+      <div class="legend-dot" style="background:${C[e]}"></div>${ELABELS(e)}
+    </div>`
+  ).join("");
+}
+
+// ── COMENTARIOS POR LÍDER Y MANAGER — Board 18432801726 ──────────────────────
+// Grupos: "Comentarios TL" → TLs  |  "Comentario Manager" → Manager
+
+const MONDAY_TL_BOARD_ID = "18432801726";
+const LEADER_DATA = {};   // nombre ítem → { comment, mondayId, colComment, groupType }
+
+// Lista fija de personas — no depende de DATA
+const PERSONAS_TL      = ["Ivonne Hernandez", "John Pulido", "Luis Forero"];
+const PERSONAS_MANAGER = ["Jhony Fabian Alfonso Filigrana"];
+
+// ── Escritura bidireccional hacia Monday ─────────────────────────────────────
+async function writeMondayLeaderCell(mondayId, columnId, value, iconEl) {
+  if (!mondayId || !columnId) return;
+  const token = getMondayToken();
+  if (!token) return;
+  if (iconEl) { iconEl.className = "leader-sync-icon saving"; iconEl.title = "Guardando…"; }
+  try {
+    const mutation = `mutation {
+      change_simple_column_value(
+        item_id: "${mondayId}",
+        board_id: "${MONDAY_TL_BOARD_ID}",
+        column_id: "${columnId}",
+        value: ${JSON.stringify(value)}
+      ) { id }
+    }`;
+    const res = await fetch(MONDAY_API_URL, {
+      method: "POST",
+      headers: { "Content-Type":"application/json","Authorization":token,"API-Version":"2024-01" },
+      body: JSON.stringify({ query: mutation })
+    });
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+    if (iconEl) { iconEl.className = "leader-sync-icon saved"; iconEl.title = "Guardado ✓"; setTimeout(()=>{ iconEl.className="leader-sync-icon"; iconEl.title=""; }, 2000); }
+  } catch(err) {
+    console.error("writeMondayLeaderCell:", err.message);
+    if (iconEl) { iconEl.className = "leader-sync-icon error"; iconEl.title = "Error al guardar"; setTimeout(()=>{ iconEl.className="leader-sync-icon"; iconEl.title=""; }, 2500); }
+  }
+}
+
+// ── Carga bidireccional: lee grupos del board TL ──────────────────────────────
+async function cargarLeaderBoard() {
+  const token = getMondayToken();
+  if (!token) return;
+  try {
+    // Traer por grupos para distinguir TL vs Manager
+    const query = `{
+      boards(ids: ${MONDAY_TL_BOARD_ID}) {
+        groups {
+          id title
+          items_page(limit: 100) {
+            items {
+              id name
+              column_values { id text column { title } }
+            }
+          }
+        }
+      }
+    }`;
+    const res = await fetch(MONDAY_API_URL, {
+      method: "POST",
+      headers: { "Content-Type":"application/json","Authorization":token,"API-Version":"2024-01" },
+      body: JSON.stringify({ query })
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json.errors?.length) return;
+
+    const groups = json.data?.boards?.[0]?.groups || [];
+    groups.forEach(group => {
+      // Determinar tipo por nombre del grupo (insensible a mayúsculas/tildes)
+      const gNorm = group.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      const groupType = gNorm.includes("manager") ? "manager" : "tl";
+
+      (group.items_page?.items || []).forEach(item => {
+        const name = item.name.trim();
+        const cv   = item.column_values || [];
+        const comment = colText(cv,"Comentarios","Comentario TL","Comentario","Comment TL","Comment","comentario");
+        const colComment = cv.find(c => c.column &&
+          ["Comentarios","Comentario TL","Comentario","Comment TL","Comment","comentario"]
+            .some(k => c.column.title.toLowerCase() === k.toLowerCase()))?.id || null;
+
+        LEADER_DATA[name] = {
+          comment:    comment.trim(),
+          mondayId:   item.id,
+          colComment,
+          groupType,
+          groupTitle: group.title,
+        };
+      });
+    });
+
+    renderLeaderComments();
+  } catch(e) {
+    console.warn("cargarLeaderBoard:", e.message);
+  }
+}
+
+// ── Helper: construye un card de comentario ───────────────────────────────────
+function _makeLeaderCard({ name, data, color, badgeHtml, syncId, containerId }) {
+  const initials   = name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const savedCom   = (data.comment || "").replace(/"/g,"&quot;");
+  const isB        = savedCom.toLowerCase().includes("bloqueante") ||
+                     savedCom.toLowerCase().includes("bloqueo") ||
+                     savedCom.toLowerCase().includes("blocker");
+  const mondayHref = data.mondayId
+    ? `<a href="https://ibm.monday.com/boards/${MONDAY_TL_BOARD_ID}/pulses/${data.mondayId}" target="_blank" style="font-size:10px;color:#3b82d4;text-decoration:none">${t('ldr_monday_link')} ↗</a>`
+    : "";
+  return `<div class="leader-card" data-container-id="${containerId||''}">
+    <div class="leader-card-name" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div class="leader-avatar" style="background:${color}">${initials}</div>
+        <span>${name}</span>
+        ${badgeHtml||""}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="leader-sync-icon" id="${syncId}"></span>
+        ${mondayHref}
+      </div>
+    </div>
+    <textarea class="leader-textarea${isB?' has-blocker':''}" data-leader-name="${name.replace(/"/g,'&quot;')}" placeholder="${t('ldr_comment_ph')}" rows="3">${savedCom}</textarea>
+    <div class="leader-blocker-tag${isB?' visible':''}">${t('leader_blocker')}</div>
+  </div>`;
+}
+
+// ── Helper: adjunta listener de escritura a un textarea de comentario ─────────
+function _attachLeaderListener(ta, syncIdFn) {
+  let debTimer;
+  ta.addEventListener("input", function() {
+    const name = this.dataset.leaderName;
+    if (LEADER_DATA[name]) LEADER_DATA[name].comment = this.value;
+    const isB = ["bloqueante","bloqueo","blocker"].some(k => this.value.toLowerCase().includes(k));
+    this.classList.toggle("has-blocker", isB);
+    const tag = this.nextElementSibling;
+    if (tag?.classList.contains("leader-blocker-tag")) tag.classList.toggle("visible", isB);
+    clearTimeout(debTimer);
+    debTimer = setTimeout(() => {
+      const d = LEADER_DATA[name];
+      if (d?.mondayId && d?.colComment) {
+        const icon = document.getElementById(syncIdFn(name));
+        writeMondayLeaderCell(d.mondayId, d.colComment, this.value, icon);
+      }
+    }, 800);
+  });
+}
+
+// ── Render Manager — lista fija PERSONAS_MANAGER ─────────────────────────────
+function renderManagerCard() {
+  const container = document.getElementById("manager-card-container");
+  if (!container) return;
+
+  // Preservar texto local antes de re-renderizar
+  container.querySelectorAll(".leader-textarea").forEach(ta => {
+    const n = ta.dataset.leaderName;
+    if (n && LEADER_DATA[n]) LEADER_DATA[n].comment = ta.value;
+  });
+
+  const colors = ["#003366","#3b82d4","#7c5cd8"];
+  container.innerHTML = PERSONAS_MANAGER.map((name, idx) => {
+    const data   = LEADER_DATA[name] || { comment:"", mondayId:null, colComment:null };
+    const syncId = `mgr-sync-${idx}`;
+    return _makeLeaderCard({
+      name, data,
+      color: colors[idx % colors.length],
+      badgeHtml: `<span style="font-size:10px;font-weight:700;color:#003366;background:#eef3fa;border:1px solid #c8d8f0;border-radius:20px;padding:2px 8px;margin-left:4px">Manager</span>`,
+      syncId,
+    });
+  }).join("");
+
+  container.querySelectorAll(".leader-textarea").forEach(ta => {
+    _attachLeaderListener(ta, name => `mgr-sync-${PERSONAS_MANAGER.indexOf(name)}`);
+  });
+}
+
+// ── Render TLs — lista fija PERSONAS_TL ──────────────────────────────────────
+function renderLeaderComments() {
+  renderManagerCard();
+  const grid = document.getElementById("leader-comments-grid");
+  if (!grid) return;
+
+  // Preservar texto local antes de re-renderizar
+  grid.querySelectorAll(".leader-textarea").forEach(ta => {
+    const n = ta.dataset.leaderName;
+    if (n && LEADER_DATA[n]) LEADER_DATA[n].comment = ta.value;
+  });
+
+  const colors = ["#7c5cd8","#3b82d4","#28a745","#e6a800","#dc3545","#003366"];
+  grid.innerHTML = PERSONAS_TL.map((name, idx) => {
+    const data   = LEADER_DATA[name] || { comment:"", mondayId:null, colComment:null };
+    const syncId = `tl-sync-${idx}`;
+    return _makeLeaderCard({ name, data, color: colors[idx % colors.length], syncId });
+  }).join("");
+
+  grid.querySelectorAll(".leader-textarea").forEach(ta => {
+    _attachLeaderListener(ta, name => `tl-sync-${PERSONAS_TL.indexOf(name)}`);
+  });
+}
+
+// Compatibilidad legacy
+const LEADER_COMMENTS = LEADER_DATA;
+const MANAGER_COMMENT = { get comment(){ return (LEADER_DATA[PERSONAS_MANAGER[0]]||{}).comment||""; } };
+
+// ── BARRAS ESTADO POR TIPO DE ENTREGABLE ─────────────────────────────────────
+function renderTipoEstBars(vis) {
+  const TIPOS = ["cierre","poscierre"];
+  const TIPO_LABEL = {"cierre": t("tipo_cierre"), "poscierre": t("tipo_poscierre")};
+  const TIPO_COLOR = {"cierre":"#0d6efd","poscierre":"#6f42c1"};
+  const W=440, BAR=34, GAP=22, LEFT=118, RIGHT=56;
+  const H = TIPOS.length*(BAR+GAP) + 24;
+  const maxTot = Math.max(...TIPOS.map(tp=>vis.filter(d=>d.tipo===tp).length), 1);
+  const usableW = W-LEFT-RIGHT;
+  const activeTipo = document.getElementById("f-tipo")?.value;
+
+  let bars="";
+  TIPOS.forEach((tp,ti)=>{
+    const y = 12 + ti*(BAR+GAP);
+    const td = vis.filter(d=>d.tipo===tp);
+    const tot = td.length;
+    const isActive = activeTipo === tp;
+    const delay = ti*0.1;
+
+    // fondo clickeable
+    bars+=`<rect x="0" y="${y-3}" width="${W}" height="${BAR+6}" fill="transparent" rx="4" style="cursor:pointer"
+      onclick="_chartFilter('f-tipo',${JSON.stringify(tp)})"/>`;
+    // fondo barra
+    bars+=`<rect x="${LEFT}" y="${y}" width="${usableW}" height="${BAR}" fill="#e5e7eb" rx="6"/>`;
+
+    let xCursor = LEFT;
+    ESTADOS.forEach((est,ei)=>{
+      const n = td.filter(d=>d.est===est).length;
+      if(!n) return;
+      const w = Math.round((n/maxTot)*usableW);
+      const pct = Math.round(n/tot*100);
+      bars+=`<rect x="${xCursor}" y="${y}" width="${w}" height="${BAR}" fill="${C[est]}" rx="6"
+        class="ch-bar ch-clickable" style="animation-delay:${delay+ei*0.06}s"
+        data-lbl="${TIPO_LABEL[tp]} · ${ELABELS(est)}: ${n} (${pct}%) — clic para filtrar"
+        onclick="_chartFilter('f-tipo',${JSON.stringify(tp)})"
+        onmouseenter="showTip(event,this.dataset.lbl)"
+        onmousemove="moveTip(event)"
+        onmouseleave="hideTip()"
+      />`;
+      if(w>22) bars+=`<text x="${xCursor+w/2}" y="${y+BAR/2+4}" text-anchor="middle" font-size="10" font-weight="700" fill="white" pointer-events="none">${n}</text>`;
+      xCursor += w;
+    });
+    bars+=`<text x="${LEFT-10}" y="${y+BAR/2+4}" text-anchor="end" font-size="12" font-weight="${isActive?'700':'600'}" fill="${isActive?'#003366':TIPO_COLOR[tp]}" style="cursor:pointer"
+      onclick="_chartFilter('f-tipo',${JSON.stringify(tp)})">${TIPO_LABEL[tp]}</text>`;
+    bars+=`<text x="${xCursor+6}" y="${y+BAR/2+4}" font-size="11" fill="#57606a" pointer-events="none">${tot}</text>`;
+  });
+
+  const el = document.getElementById("chart-tipo-est");
+  if(el) el.innerHTML=`<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg>`;
+  const leg = document.getElementById("tipo-est-legend");
+  if(leg) leg.innerHTML = ESTADOS.map(e=>
+    `<div class="legend-item" onclick="_chartFilter('f-estado','${e}')" title="Filtrar estado ${ELABELS(e)}">
+      <div class="legend-dot" style="background:${C[e]}"></div>${ELABELS(e)}
+    </div>`
+  ).join("");
+}
+
+// ── DONA DISTRIBUCIÓN CIERRE VS POS-CIERRE ────────────────────────────────────
+function renderTipoDist(vis) {
+  const TIPOS = ["cierre","poscierre"];
+  const TIPO_LABEL = {"cierre": t("tipo_cierre"), "poscierre": t("tipo_poscierre")};
+  const TIPO_COLOR = {"cierre":"#0d6efd","poscierre":"#6f42c1"};
+  // Dona centrada: CX=CY=mitad del viewBox cuadrado
+  const R=80, r=46, S=200; // S = tamaño del viewBox cuadrado, CX=CY=S/2
+  const CX=S/2, CY=S/2;
+  const total = vis.filter(d=>TIPOS.includes(d.tipo)).length;
+
+  const el=document.getElementById("chart-tipo-dist");
+  const leg=document.getElementById("tipo-dist-legend");
+
+  if(!total){
+    if(el) el.innerHTML=`<p style='font-size:12px;color:#57606a;padding:8px 0'>${t("sin_datos")}</p>`;
+    if(leg) leg.innerHTML="";
+    return;
+  }
+
+  let slices=`<g class="ch-group">`; let startAngle=-Math.PI/2;
+  TIPOS.forEach((tp,ti)=>{
+    const n = vis.filter(d=>d.tipo===tp).length;
+    if(!n) return;
+    const angle = (n/total)*2*Math.PI;
+    const end = startAngle+angle;
+    const x1=CX+R*Math.cos(startAngle), y1=CY+R*Math.sin(startAngle);
+    const x2=CX+R*Math.cos(end),        y2=CY+R*Math.sin(end);
+    const ix1=CX+r*Math.cos(startAngle),iy1=CY+r*Math.sin(startAngle);
+    const ix2=CX+r*Math.cos(end),       iy2=CY+r*Math.sin(end);
+    const large=angle>Math.PI?1:0;
+    const pct=Math.round(n/total*100);
+    const path=`M${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} L${ix2},${iy2} A${r},${r},0,${large},0,${ix1},${iy1} Z`;
+    slices+=`<path d="${path}" fill="${TIPO_COLOR[tp]}"
+      class="ch-clickable ch-fade" style="animation-delay:${ti*0.12}s"
+      data-lbl="${TIPO_LABEL[tp]}: ${n} (${pct}%) — clic para filtrar"
+      onclick="_chartFilter('f-tipo',${JSON.stringify(tp)})"
+      onmouseenter="showTip(event,this.dataset.lbl)"
+      onmousemove="moveTip(event)"
+      onmouseleave="hideTip()"
+    />`;
+    // etiqueta % dentro del arco si hay espacio
+    const midA=startAngle+angle/2;
+    const labelR=(R+r)/2;
+    if(pct>7) slices+=`<text x="${CX+labelR*Math.cos(midA)}" y="${CY+labelR*Math.sin(midA)+4}"
+      text-anchor="middle" font-size="13" font-weight="700" fill="white" pointer-events="none">${pct}%</text>`;
+    startAngle=end;
+  });
+  slices+=`</g>`;
+  // texto central
+  slices+=`<text x="${CX}" y="${CY-8}" text-anchor="middle" font-size="22" font-weight="700" fill="#1f2328" class="ch-fade">${total}</text>`;
+  slices+=`<text x="${CX}" y="${CY+12}" text-anchor="middle" font-size="11" fill="#57606a" class="ch-fade">total</text>`;
+
+  // SVG cuadrado con viewBox cuadrado → siempre centrado, sin recorte
+  if(el) el.innerHTML=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" style="display:block;margin:0 auto">${slices}</svg>`;
+
+  if(leg) leg.innerHTML = TIPOS.map(tp=>{
+    const n=vis.filter(d=>d.tipo===tp).length;
+    const pct=total?Math.round(n/total*100):0;
+    const isActive = document.getElementById("f-tipo")?.value === tp;
+    return `<div class="legend-item${isActive?' legend-active':''}" onclick="_chartFilter('f-tipo',${JSON.stringify(tp)})" title="Filtrar por ${TIPO_LABEL[tp]}" style="gap:8px;padding:4px 8px">
+      <div class="legend-dot" style="background:${TIPO_COLOR[tp]};width:13px;height:13px"></div>
+      <span>${TIPO_LABEL[tp]}: <strong>${n}</strong> <span style="color:#adb5bd">(${pct}%)</span></span>
+    </div>`;
+  }).join("");
+}
+
+function renderGraficas(vis){
+  renderDona(vis);
+  renderAreasBars(vis);
+  renderRespBars(vis);
+  renderOpBars(vis);
+  renderTipoEstBars(vis);
+  renderTipoDist(vis);
+  renderDiaBars(vis);
+  renderLeaderComments();
+}
+
+// ── SELECTOR DE TABLERO ───────────────────────────────────────────────────────
+let _todosLosTableros = []; // cache de boards del usuario
+
+function cerrarSelectorTablero() {
+  document.getElementById("sb-overlay").style.display = "none";
+}
+
+function filtrarTableros() {
+  const q = document.getElementById("sb-search").value.trim().toLowerCase();
+  renderListaTableros(_todosLosTableros.filter(b =>
+    !q || b.name.toLowerCase().includes(q) || b.id.includes(q)
+  ));
+}
+
+function renderListaTableros(boards) {
+  const activoId = getMondayBoardId();
+  const list = document.getElementById("sb-list");
+  if (!boards.length) {
+    list.innerHTML = `<p style="padding:14px;font-size:12px;color:#57606a;text-align:center">Sin resultados</p>`;
+    return;
+  }
+  list.innerHTML = boards.map(b => {
+    const initials = b.name.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    const isActive = b.id === activoId;
+    return `<div class="sb-item${isActive?' active':''}" onclick="seleccionarTablero('${b.id}','${b.name.replace(/'/g,"\\'")}')">
+      <div class="sb-item-icon" style="background:${isActive?'#3b82d4':'#003366'}">${initials}</div>
+      <span class="sb-item-name">${b.name}</span>
+      <span class="sb-item-id">#${b.id}</span>
+      ${isActive ? '<span style="font-size:10px;color:#3b82d4;font-weight:700">● activo</span>' : ''}
+    </div>`;
+  }).join("");
+}
+
+async function abrirSelectorTablero() {
+  const token = getMondayToken();
+  const overlay = document.getElementById("sb-overlay");
+  const list    = document.getElementById("sb-list");
+  const status  = document.getElementById("sb-status");
+
+  document.getElementById("sb-search").value = "";
+  status.textContent = "";
+  overlay.style.display = "flex";
+
+  if (!token) {
+    list.innerHTML = `<p style="padding:14px;font-size:12px;color:#b02a37;text-align:center">⚠ Se requiere token de Monday</p>`;
+    return;
+  }
+
+  // Si ya tenemos caché reciente, mostrar inmediatamente
+  if (_todosLosTableros.length) {
+    renderListaTableros(_todosLosTableros);
+    status.textContent = `${_todosLosTableros.length} tableros disponibles`;
+    return;
+  }
+
+  list.innerHTML = `<p style="padding:14px;font-size:12px;color:#57606a;text-align:center">⏳ Cargando tableros…</p>`;
+
+  try {
+    // Paginamos hasta 100 boards del workspace del usuario
+    const query = `{
+      boards(limit: 100, order_by: used_at) {
+        id
+        name
+        description
+        items_count
+      }
+    }`;
+    const res = await fetch(MONDAY_API_URL, {
+      method: "POST",
+      headers: { "Content-Type":"application/json","Authorization":token,"API-Version":"2024-01" },
+      body: JSON.stringify({ query })
+    });
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+    _todosLosTableros = (json.data?.boards || []).filter(b => b.name && b.id);
+    renderListaTableros(_todosLosTableros);
+    status.textContent = `${_todosLosTableros.length} tableros disponibles`;
+  } catch(err) {
+    list.innerHTML = `<p style="padding:14px;font-size:12px;color:#b02a37;text-align:center">❌ ${err.message}</p>`;
+  }
+}
+
+function seleccionarTablero(boardId, boardName) {
+  // Guardar como board activo y recargar datos
+  localStorage.setItem("monday_board_id", boardId);
+  cerrarSelectorTablero();
+
+  const descAuto = document.getElementById("upload-desc-auto");
+  descAuto.innerHTML = `⏳ Cargando <strong>${boardName}</strong>…`;
+  descAuto.style.color = "#57606a";
+
+  // Limpiar cache de grupos para el nuevo board
+  _mondayGroups = [];
+  _todosLosTableros = []; // forzar refetch en próxima apertura
+
+  cargarDatosDashboard();
+}
+
+// ── NUEVO MES ─────────────────────────────────────────────────────────────────
+// Guarda los grupos cargados desde Monday para uso en el modal
+let _mondayGroups = [];
+
+const MESES_NOMBRE_ES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MESES_NOMBRE_EN = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function nombreMes(m, lang) {
+  return (lang === "es" ? MESES_NOMBRE_ES : MESES_NOMBRE_EN)[m] || String(m);
+}
+
+// Calcula el nombre del período siguiente dado un mes y año
+function periodoSiguiente(mes, anio) {
+  const siguienteMes  = mes === 12 ? 1 : mes + 1;
+  const siguienteAnio = mes === 12 ? anio + 1 : anio;
+  return { mes: siguienteMes, anio: siguienteAnio,
+           nombre: `${nombreMes(siguienteMes, LANG)} ${siguienteAnio}` };
+}
+
+function abrirModalNuevoMes() {
+  const token = getMondayToken();
+  const prog  = document.getElementById("nm-progress");
+  prog.style.display = "none";
+  prog.className = "nm-progress";
+  document.getElementById("nm-btn-confirm").disabled = false;
+  document.getElementById("nm-btn-cancel").disabled  = false;
+
+  if (!token) {
+    prog.textContent   = t("nm_no_token");
+    prog.style.display = "block";
+    prog.className     = "nm-progress error";
+    document.getElementById("nm-overlay").style.display = "flex";
+    return;
+  }
+
+  // Poblar selector de grupos fuente con los grupos cargados del board
+  const sel = document.getElementById("nm-source-sel");
+  sel.innerHTML = "";
+  if (_mondayGroups.length) {
+    _mondayGroups.forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g.id;
+      opt.textContent = g.title;
+      sel.appendChild(opt);
+    });
+    // Pre-seleccionar el grupo más reciente con período reconocible
+    const conPeriodo = _mondayGroups.filter(g => { const p=parsearPeriodo(g.title); return p.mes && p.anio; });
+    if (conPeriodo.length) {
+      conPeriodo.sort((a,b) => {
+        const pa=parsearPeriodo(a.title), pb=parsearPeriodo(b.title);
+        return (pb.anio*100+pb.mes) - (pa.anio*100+pa.mes);
+      });
+      sel.value = conPeriodo[0].id;
+    }
+    // Auto-sugerir nombre: tomar el título del grupo seleccionado y cambiar el mes
+    _actualizarSugerenciaNombre();
+  } else {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "⚠ Recarga primero para ver los grupos";
+    sel.appendChild(opt);
+  }
+
+  // Actualizar sugerencia de nombre cuando cambia la selección
+  sel.onchange = _actualizarSugerenciaNombre;
+
+  document.getElementById("nm-overlay").style.display = "flex";
+}
+
+function _actualizarSugerenciaNombre() {
+  const sel = document.getElementById("nm-source-sel");
+  const g = _mondayGroups.find(g => g.id === sel.value);
+  if (!g) return;
+  const p = parsearPeriodo(g.title);
+  if (p.mes && p.anio) {
+    const sig = periodoSiguiente(p.mes, p.anio);
+    // Intentar reemplazar el nombre del mes en el título original
+    const MESES_ALL = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto",
+                       "septiembre","octubre","noviembre","diciembre",
+                       "january","february","march","april","may","june","july","august",
+                       "september","october","november","december"];
+    let nuevoNombre = g.title;
+    for (const m of MESES_ALL) {
+      const re = new RegExp(m, "gi");
+      if (re.test(nuevoNombre)) {
+        nuevoNombre = nuevoNombre.replace(re, nombreMes(sig.mes, LANG));
+        break;
+      }
+    }
+    // Si también cambia el año (dic→ene), reemplazar año
+    if (sig.anio !== p.anio) {
+      nuevoNombre = nuevoNombre.replace(String(p.anio), String(sig.anio));
+    }
+    document.getElementById("nm-nombre-input").value = nuevoNombre;
+  } else {
+    document.getElementById("nm-nombre-input").value = g.title + " (copia)";
+  }
+}
+
+function cerrarModalNuevoMes() {
+  document.getElementById("nm-overlay").style.display = "none";
+}
+
+async function diagnosticarColumnas() {
+  const token       = getMondayToken();
+  const boardId     = getMondayBoardId();
+  const grupoId     = document.getElementById("nm-source-sel").value;
+  const diagDiv     = document.getElementById("nm-diag");
+  const diagBtn     = document.getElementById("nm-btn-diag");
+  if (!token || !grupoId) return;
+
+  diagBtn.disabled  = true;
+  diagDiv.style.display = "block";
+  diagDiv.textContent   = "⏳ Consultando primer ítem del grupo…";
+
+  try {
+    const q = `{ boards(ids:${boardId}) { groups(ids:["${grupoId}"]) {
+      items_page(limit:1) { items { id name
+        column_values { id text value column { title type } }
+      }}
+    }}}`;
+    const res  = await fetch(MONDAY_API_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":token,"API-Version":"2024-01"},
+      body: JSON.stringify({ query: q })
+    });
+    const json = await res.json();
+    const item = json.data?.boards?.[0]?.groups?.[0]?.items_page?.items?.[0];
+    if (!item) { diagDiv.textContent = "⚠ No se encontró ningún ítem en el grupo."; return; }
+
+    let out = `Ítem: "${item.name}"\n${"─".repeat(60)}\n`;
+    out += `${"ID".padEnd(26)} ${"TITLE".padEnd(28)} ${"TYPE".padEnd(16)} VALUE\n`;
+    out += `${"─".repeat(26)} ${"─".repeat(28)} ${"─".repeat(16)} ${"─".repeat(30)}\n`;
+    (item.column_values || []).forEach(cv => {
+      const title = (cv.column?.title || "").slice(0,27).padEnd(28);
+      const type  = (cv.column?.type  || "").slice(0,15).padEnd(16);
+      const id    = cv.id.slice(0,25).padEnd(26);
+      const val   = cv.value && cv.value !== "null" ? cv.value.slice(0,60) : `(text="${cv.text}")`;
+      out += `${id} ${title} ${type} ${val}\n`;
+    });
+    diagDiv.textContent = out;
+    console.log("🔍 Diagnóstico columnas:", item);
+  } catch(e) {
+    diagDiv.textContent = "❌ Error: " + e.message;
+  } finally {
+    diagBtn.disabled = false;
+  }
+}
+
+async function ejecutarNuevoMes() {
+  const token   = getMondayToken();
+  const boardId = getMondayBoardId();
+  if (!token) return;
+
+  const nuevoNombre       = document.getElementById("nm-nombre-input").value.trim();
+  const grupoFuenteId     = document.getElementById("nm-source-sel").value;
+  const prog              = document.getElementById("nm-progress");
+  const btnOk             = document.getElementById("nm-btn-confirm");
+  const btnCan            = document.getElementById("nm-btn-cancel");
+
+  if (!nuevoNombre) {
+    document.getElementById("nm-nombre-input").focus();
+    return;
+  }
+  if (!grupoFuenteId) return;
+
+  btnOk.disabled  = true;
+  btnCan.disabled = true;
+  prog.className  = "nm-progress";
+  prog.style.display = "block";
+
+  try {
+    // 1. Crear el nuevo grupo
+    prog.textContent = "Creando grupo…";
+    const mutGrp = `mutation { create_group(board_id: ${boardId}, group_name: ${JSON.stringify(nuevoNombre)}) { id } }`;
+    const resGrp = await fetch(MONDAY_API_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":token,"API-Version":"2024-01"},
+      body: JSON.stringify({ query: mutGrp })
+    });
+    const jsonGrp = await resGrp.json();
+    if (jsonGrp.errors?.length) throw new Error(jsonGrp.errors[0].message);
+    const nuevoGrupoId = jsonGrp.data.create_group.id;
+
+    // 2. Obtener TODOS los ítems del grupo fuente con todos sus column_values
+    prog.textContent = "Leyendo actividades del grupo fuente…";
+    const qItems = `{
+      boards(ids: ${boardId}) {
+        groups(ids: ["${grupoFuenteId}"]) {
+          items_page(limit: 500) {
+            items {
+              id name
+              column_values { id text value column { title type } }
+            }
+          }
+        }
+      }
+    }`;
+    const resIt = await fetch(MONDAY_API_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":token,"API-Version":"2024-01"},
+      body: JSON.stringify({ query: qItems })
+    });
+    const jsonIt = await resIt.json();
+    if (jsonIt.errors?.length) throw new Error(jsonIt.errors[0].message);
+    const itemsFuente = jsonIt.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+
+    // Columnas que deben quedar en blanco
+    const COLS_BLANK = new Set(["estatus entregable","estatus cierre"]);
+
+    // 3. Crear cada ítem copiando todos los campos excepto los blancos
+    // Convierte cv.value (JSON raw de Monday) al formato que acepta create_item
+    function cvParaEscritura(cv) {
+      if (!cv.value || cv.value === "null" || cv.value === "") {
+        // Sin valor raw: usar text solo para texto simple
+        if (cv.column?.type === "text" && cv.text?.trim()) return cv.text.trim();
+        return null;
+      }
+      let parsed;
+      try { parsed = JSON.parse(cv.value); } catch { return cv.text?.trim() || null; }
+      if (parsed === null || parsed === undefined) return null;
+
+      const tipo = cv.column?.type || "";
+
+      // Status / color → solo { index }
+      if (tipo === "color" || tipo === "status") {
+        if (typeof parsed.index === "number") return { index: parsed.index };
+        return null;
+      }
+      // Dropdown → solo { ids: [...] }
+      if (tipo === "dropdown") {
+        if (Array.isArray(parsed.ids) && parsed.ids.length) return { ids: parsed.ids };
+        return null;
+      }
+      // Fecha → solo { date: "YYYY-MM-DD" }
+      if (tipo === "date") {
+        if (parsed.date) return { date: parsed.date };
+        return null;
+      }
+      // Texto largo → solo { text: "..." }
+      if (tipo === "long_text") {
+        const txt = parsed.text ?? parsed;
+        if (typeof txt === "string" && txt.trim()) return { text: txt.trim() };
+        return null;
+      }
+      // Número → número directo
+      if (tipo === "numeric") {
+        const n = parsed.number ?? parsed;
+        if (n !== null && n !== undefined && n !== "") return String(n);
+        return null;
+      }
+      // Texto simple → string
+      if (tipo === "text") {
+        const txt = typeof parsed === "string" ? parsed : (parsed.text ?? "");
+        return txt.trim() || null;
+      }
+      // Personas (people) → { personsAndTeams: [...] }
+      if (tipo === "people") {
+        if (Array.isArray(parsed.personsAndTeams) && parsed.personsAndTeams.length)
+          return { personsAndTeams: parsed.personsAndTeams.map(p => ({ id: p.id, kind: p.kind })) };
+        return null;
+      }
+      // Fallback: eliminar solo campos internos de Monday y enviar el resto
+      if (typeof parsed === "object") {
+        const clean = { ...parsed };
+        ["changed_at","updated_at","label","is_done","additional_value","checked","color"].forEach(k => delete clean[k]);
+        return Object.keys(clean).length ? clean : null;
+      }
+      return null;
+    }
+
+    let creados = 0, fallidos = 0;
+    for (const item of itemsFuente) {
+      const colVals = {};
+      (item.column_values || []).forEach(cv => {
+        if (!cv.column) return;
+        const tNorm = cv.column.title.toLowerCase().trim();
+        if (COLS_BLANK.has(tNorm)) return; // dejar en blanco
+        const val = cvParaEscritura(cv);
+        if (val !== null) colVals[cv.id] = val;
+      });
+
+      const mutItem = `mutation {
+        create_item(
+          board_id: ${boardId},
+          group_id: "${nuevoGrupoId}",
+          item_name: ${JSON.stringify(item.name)},
+          column_values: ${JSON.stringify(JSON.stringify(colVals))}
+        ) { id }
+      }`;
+      try {
+        const resItem = await fetch(MONDAY_API_URL, {
+          method:"POST",
+          headers:{"Content-Type":"application/json","Authorization":token,"API-Version":"2024-01"},
+          body: JSON.stringify({ query: mutItem })
+        });
+        const jsonItem = await resItem.json();
+        if (jsonItem.errors?.length || !jsonItem.data?.create_item?.id) {
+          console.warn("⚠ Ítem falló:", item.name, jsonItem.errors?.[0]?.message);
+          fallidos++;
+        } else {
+          creados++;
+        }
+      } catch(e) {
+        console.warn("⚠ Ítem excepción:", item.name, e.message);
+        fallidos++;
+      }
+      prog.textContent = `Copiando actividades… (${creados + fallidos}/${itemsFuente.length})`;
+    }
+
+    const msgFallidos = fallidos > 0 ? ` (⚠ ${fallidos} con error, ver consola)` : "";
+    prog.textContent   = `✅ Grupo "${nuevoNombre}" creado con ${creados} actividades.${msgFallidos}`;
+    prog.style.background = fallidos > 0 ? "#fff8f0" : "#f0fff4";
+    btnCan.disabled    = false;
+    btnCan.textContent = "Cerrar";
+
+    setTimeout(() => { cerrarModalNuevoMes(); cargarDesdeMondayAPI(); }, fallidos > 0 ? 5000 : 2500);
+
+  } catch(err) {
+    prog.textContent   = `❌ Error: ${err.message}`;
+    prog.className     = "nm-progress error";
+    btnOk.disabled     = false;
+    btnCan.disabled    = false;
+  }
+}
+
+// ── EVENTOS ───────────────────────────────────────────────────────────────────
+document.getElementById("file-input").addEventListener("change", e=>{
+  if(e.target.files[0]) procesarExcel(e.target.files[0]);
+  e.target.value="";
+});
+
+["f-op","f-area","f-resp","f-estado","f-pais","f-dia","f-tipo","f-anio","f-mes"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", render);
+});
+document.getElementById("f-search").addEventListener("input", render);
+document.getElementById("pg-size").addEventListener("change", () => { _pgCurrent = 0; renderTablaPagina(); });
+document.getElementById("btn-limpiar").addEventListener("click", ()=>{
+  ["f-op","f-area","f-resp","f-estado","f-pais","f-dia","f-tipo","f-anio","f-mes"].forEach(id=>{ document.getElementById(id).value=""; });
+  document.getElementById("f-search").value="";
+  render();
+});
+
+// ── TOGGLE TABLA ──────────────────────────────────────────────────────────────
+function toggleTabla() {
+  const wrap = document.getElementById("tabla-body-wrap");
+  const btn  = document.getElementById("btn-toggle-tabla");
+  const abierto = !wrap.classList.contains("collapsed");
+
+  if (abierto) {
+    // Fijar max-height al alto actual para que la transición arranque desde ahí
+    wrap.style.maxHeight = wrap.scrollHeight + "px";
+    // forzar reflow antes de colapsar
+    wrap.getBoundingClientRect();
+    wrap.classList.add("collapsed");
+    wrap.style.maxHeight = "0";
+    btn.textContent = "▶";
+    btn.setAttribute("aria-expanded", "false");
+    btn.title = "Mostrar actividades";
+  } else {
+    wrap.classList.remove("collapsed");
+    wrap.style.maxHeight = wrap.scrollHeight + "px";
+    btn.textContent = "▼";
+    btn.setAttribute("aria-expanded", "true");
+    btn.title = "Ocultar actividades";
+    // limpiar max-height al terminar la transición para que sea responsive
+    wrap.addEventListener("transitionend", () => { wrap.style.maxHeight = ""; }, { once: true });
+  }
+}
+
+// Inicializar max-height para que la transición funcione desde el primer clic
+document.addEventListener("DOMContentLoaded", () => {
+  const wrap = document.getElementById("tabla-body-wrap");
+  if (wrap) wrap.style.maxHeight = "";
+});
+
+// ── IDIOMA ────────────────────────────────────────────────────────────────────
+document.getElementById("btn-lang").addEventListener("click", () => {
+  LANG = LANG === "es" ? "en" : "es";
+  applyLang();
+});
+
+// ── INTEGRACIÓN MONDAY.COM (LECTURA Y ESCRITURA EN VIVO) ──────────────────────
+
+const MONDAY_BOARD_ID = "18432754378";
+const MONDAY_API_URL  = "https://api.monday.com/v2";
+
+// Clave autorizada para interactuar en tiempo real con Monday.com
+const MON_KEY_AUTH = [
+  "eyJhbGciOiJIUzI1NiJ9",
+  "eyJ0aWQiOjcwODYzNzc0NSwiYWFpIjoxMSwidWlkIjo1NDU2ODM2NywiaWFkIjoiMjAyNi0wOS0yOVQwMTo0Mzo0NC4yMDdaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTM1MzY5ODEsInJnbiI6InVzZTEifQ",
+  "k47gcDOK1VFkNgFKqKgvyqe9KHRvMHHnY6tosTJh_6A"
+].join(".");
+
+function getMondayToken() {
+  return localStorage.getItem("monday_token") || MON_KEY_AUTH;
+}
+function getMondayBoardId() {
+  return localStorage.getItem("monday_board_id") || MONDAY_BOARD_ID;
+}
+
+// Mapea el label de estado de Monday al valor interno del dashboard
+function normalizarEstadoMonday(label) {
+  if (!label) return "NOT STARTED";
+  const l = label.toUpperCase();
+  if (l === "COMPLETED" || l === "COMPLETADO" || l === "DONE" || l === "FINALIZADO") return "COMPLETED";
+  if (l === "IN PROCESS" || l === "EN PROCESO" || l === "EN PROGRESO" || l === "WORKING ON IT") return "IN PROCESS";
+  if (l === "NOT STARTED" || l === "NO INICIADO" || l === "NOT APPLICABLE" || l === "BLOQUEADO" || l === "STUCK") return "NOT STARTED";
+  return "NOT STARTED";
+}
+
+// Extrae el texto de una columna por título (variantes de nombre)
+function colText(columnValues, ...titles) {
+  for (const cv of columnValues) {
+    const t = (cv.column && cv.column.title) ? cv.column.title.trim() : "";
+    if (titles.some(opt => t.toLowerCase() === opt.toLowerCase())) return cv.text || "";
+  }
+  // 2° pasada: coincidencia parcial
+  for (const cv of columnValues) {
+    const t = (cv.column && cv.column.title) ? cv.column.title.trim().toLowerCase() : "";
+    if (titles.some(opt => t.includes(opt.toLowerCase()))) return cv.text || "";
+  }
+  return "";
+}
+
+// ── CARGA PRINCIPAL DEL DASHBOARD ─────────────────────────────────────────────
+async function cargarDatosDashboard() {
+  const descAuto   = document.getElementById("upload-desc-auto");
+  const descManual = document.getElementById("upload-desc-manual");
+  const status     = document.getElementById("file-status");
+
+  descAuto.innerHTML = `⏳ Conectando con <strong>Monday.com</strong>…`;
+  descAuto.style.color = "#57606a";
+
+  const token = getMondayToken();
+
+  // 1. Intento directo en tiempo real con Monday.com (con token para tener IDs de edición)
+  if (token) {
+    try {
+      await cargarDesdeMondayDirecto(token);
+      return;
+    } catch(errDirecto) {
+      console.warn("Monday live connection error:", errDirecto.message);
+    }
+  }
+
+  // 2. Intento desde datos sincronizados (data/cierre.json)
+  try {
+    const res = await fetch("data/cierre.json", { cache: "no-cache" });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.actividades && json.actividades.length > 0) {
+        normalizarDatos(json.actividades);
+        DATA = json.actividades;
+        reconstruirFiltros();
+        render();
+        cargarLeaderBoard();
+
+        const fUpdate = json.updatedAt ? new Date(json.updatedAt).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }) : "";
+        descAuto.innerHTML = `✅ Datos en vivo desde <strong>Monday.com</strong> — <strong>${json.actividades.length} actividades</strong> · <span style="font-size:10px;color:#57606a">${fUpdate}</span>
+          <span style="margin-left:8px;font-size:11px;cursor:pointer;color:#3b82d4" onclick="cargarDatosDashboard()">🔃 Actualizar</span>`;
+        descAuto.style.color = "#1a7a35";
+        status.style.display = "inline-block";
+        status.className = "file-status";
+        status.textContent = `✓ Monday.com — ${json.actividades.length} actividades`;
+        descManual.style.display = "none";
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // 3. Fallback al Excel del repositorio
+  autoCargarDesdeRepo(true);
+}
+
+function procesarItemsMonday(items) {
+  const descAuto = document.getElementById("upload-desc-auto");
+  const status   = document.getElementById("file-status");
+  const descManual = document.getElementById("upload-desc-manual");
+
+  const nuevos = items.map(item => {
+    const cv = item.column_values || [];
+    const estRaw  = colText(cv, "Estatus Cierre","Estatus","Estado","Status","Estatus_Cierre","estado");
+    const diaRaw  = colText(cv, "Dia","Día","DIA","Day","dia");
+    const opRaw   = colText(cv, "Operación","Operacion","Operation","OPERACION","operacion");
+    const respRaw = colText(cv, "Responsable","RESPONSABLE","Owner","Person","responsable","Assignee");
+    const areaRaw = colText(cv, "Areas","Área","Area","AREA","AREAS","area");
+    const paisRaw = colText(cv, "PAISES","Paises","País","Pais","PAIS","Country","pais");
+    const tipoRaw = colText(cv, "Estatus Entregable","Tipo","TIPO","Deliverable Status","Cierre_Tipo","entregable");
+    const comRaw  = colText(cv, "Comentarios","Comentario","Comments","Comment","COMENTARIOS","comentario","Notes","notes");
+    // Fecha: columna Date si existe, o se extrae del group.title
+    const fechaRaw = colText(cv, "Date","Fecha","FECHA","date","fecha");
+    const periodo  = fechaRaw ? parsearPeriodo(fechaRaw)
+                              : parsearPeriodo(item.group ? item.group.title : "");
+
+    const colIds = {};
+    cv.forEach(c => {
+      if (c.column && c.column.title) colIds[c.column.title.trim()] = c.id;
+    });
+
+    return {
+      n:         item.name.trim(),
+      mondayId:  item.id,
+      colIds,
+      _grupo: item.group ? item.group.title : "",
+      dia:  diaRaw !== "" ? (isNaN(Number(diaRaw)) ? null : Number(diaRaw)) : null,
+      op:   opRaw.trim(),
+      est:  normalizarEstadoMonday(estRaw),
+      resp: respRaw.trim(),
+      area: areaRaw.trim() || (item.group ? item.group.title : ""),
+      pais: paisRaw.trim(),
+      tipo: tipoRaw.trim(),
+      com:  comRaw.trim(),
+      mes:  periodo.mes,
+      anio: periodo.anio,
+    };
+  }).filter(d => d.n);
+
+  if (nuevos.length > 0) {
+    normalizarDatos(nuevos);
+    DATA = nuevos;
+    reconstruirFiltros();
+    render();
+    // Cargar en paralelo el board de comentarios TL
+    cargarLeaderBoard();
+
+    const ahora = new Date().toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" });
+    descAuto.innerHTML = `✅ Datos en vivo desde <strong>Monday.com</strong> — <strong>${nuevos.length} actividades</strong> · <span style="font-size:10px;color:#57606a">${ahora}</span>
+      <span style="margin-left:8px;font-size:11px;cursor:pointer;color:#3b82d4" onclick="cargarDatosDashboard()">🔃 Actualizar</span>`;
+    descAuto.style.color = "#1a7a35";
+    status.style.display = "inline-block";
+    status.className = "file-status";
+    status.textContent = `✓ Monday.com — ${nuevos.length} actividades`;
+    descManual.style.display = "none";
+  }
+}
+
+async function cargarDesdeMondayDirecto(token) {
+  // Usamos groups { items } para obtener todos los períodos (sin límite de items_page)
+  // y para que cada ítem tenga garantizado su group.title (= mes/año)
+  const query = `{
+    boards(ids: ${getMondayBoardId()}) {
+      name
+      groups {
+        id
+        title
+        items_page(limit: 500) {
+          items {
+            id
+            name
+            column_values {
+              id text
+              column { title }
+            }
+          }
+        }
+      }
+    }
+  }`;
+  const res = await fetch(MONDAY_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": token,
+      "API-Version": "2024-01"
+    },
+    body: JSON.stringify({ query })
+  });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const json = await res.json();
+  if (json.errors && json.errors.length) throw new Error(json.errors[0].message);
+
+  const groups = json.data?.boards?.[0]?.groups || [];
+  if (!groups.length) throw new Error("Sin grupos");
+
+  // Guardar grupos para uso en el modal Nuevo Mes
+  _mondayGroups = groups.map(g => ({ id: g.id, title: g.title }));
+
+  // Aplanar grupos → ítems, inyectando group.title en cada ítem
+  const items = [];
+  groups.forEach(g => {
+    const gItems = g.items_page?.items || [];
+    gItems.forEach(item => {
+      items.push({ ...item, group: { title: g.title } });
+    });
+  });
+
+  if (!items.length) throw new Error("Sin items");
+  console.log("[Monday] Grupos encontrados:", groups.map(g => g.title));
+  procesarItemsMonday(items);
+}
+
+function cargarDesdeMondayAPI() {
+  cargarDatosDashboard();
+}
+
+// ── AUTO-CARGA DESDE data/cierre.xlsx (GitHub Pages) ────────────────────────
+async function autoCargarDesdeRepo(silencioso = false) {
+  const descAuto   = document.getElementById("upload-desc-auto");
+  const descManual = document.getElementById("upload-desc-manual");
+  const status     = document.getElementById("file-status");
+
+  try {
+    const resp = await fetch("data/cierre.xlsx", { cache: "no-cache" });
+    if (!resp.ok) throw new Error("Archivo no encontrado (HTTP " + resp.status + ")");
+
+    const arrayBuffer = await resp.arrayBuffer();
+    const wb   = XLSX.read(arrayBuffer, { type: "array" });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+    if (rows.length < 2) throw new Error("El archivo está vacío.");
+
+    const headers = rows[0].map(h => h ? h.toString().trim() : "");
+    const iName  = buscarCol(headers, "Name","Nombre","ACTIVIDAD","Actividad");
+    const iDia   = buscarCol(headers, "Dia","Día","DIA");
+    const iOp    = buscarCol(headers, "Operación","Operacion","OPERACION","Operation");
+    const iEst   = buscarCol(headers, "Estatus Cierre","Estatus","Estado","STATUS","Estatus_Cierre");
+    const iResp  = buscarCol(headers, "Responsable","RESPONSABLE");
+    const iArea  = buscarCol(headers, "Areas","Área","Area","AREA","AREAS");
+    const iPais  = buscarCol(headers, "PAISES","Paises","País","Pais","PAIS");
+    const iTipo  = buscarCol(headers, "Estatus Entregable","Tipo","TIPO","Deliverable Status","Cierre_Tipo");
+    const iCom   = buscarCol(headers, "Comentarios","Comentario","Comments","Comment","COMENTARIOS");
+    const iFecha = buscarCol(headers, "Fecha","Date","FECHA","Mes","MES","Año","AÑO","Period","Periodo");
+
+    if (iName === -1 || iEst === -1) throw new Error('Columnas "Name" y "Estatus Cierre" no encontradas.');
+
+    const nuevos = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const nombre = r[iName] ? r[iName].toString().trim() : "";
+      if (!nombre) continue;
+      const periodo = iFecha !== -1 ? parsearPeriodo(r[iFecha] ? r[iFecha].toString() : "") : { mes: null, anio: null };
+      nuevos.push({
+        n: nombre,
+        dia:  iDia  !== -1 && r[iDia]  !== "" ? Number(r[iDia]) : null,
+        op:   iOp   !== -1 ? r[iOp].toString().trim()  : "",
+        est:  iEst  !== -1 ? r[iEst].toString().trim().toUpperCase() : "",
+        resp: iResp !== -1 ? r[iResp].toString().trim() : "",
+        area: iArea !== -1 ? r[iArea].toString().trim() : "",
+        pais: iPais !== -1 ? r[iPais].toString().trim() : "",
+        tipo: iTipo !== -1 ? r[iTipo].toString().trim() : "",
+        com:  iCom  !== -1 ? r[iCom].toString().trim()  : "",
+        mes:  periodo.mes,
+        anio: periodo.anio,
+      });
+    }
+
+    if (!nuevos.length) throw new Error("Sin filas válidas en el archivo.");
+    normalizarDatos(nuevos);
+    DATA = nuevos;
+    reconstruirFiltros();
+    render();
+
+    // Mostrar estado éxito
+    descAuto.innerHTML = `✅ Datos cargados desde <code>data/cierre.xlsx</code> — <strong>${nuevos.length} actividades</strong>`;
+    descAuto.style.color = "#1a7a35";
+    status.style.display = "inline-block";
+    status.className = "file-status";
+    status.textContent = `✓ data/cierre.xlsx — ${nuevos.length} actividades`;
+    descManual.style.display = "none";
+
+  } catch(err) {
+    if (!silencioso) {
+      descAuto.innerHTML = `ℹ️ No se encontró <code>data/cierre.xlsx</code>. <span style="margin-left:8px;font-size:11px;cursor:pointer;color:#3b82d4" onclick="cargarDesdeMondayAPI()">🔃 Conectar Monday</span>`;
+      descAuto.style.color = "#57606a";
+    }
+    descManual.style.display = "none";
+    // Inicializar con datos precargados si no hay nada
+    reconstruirFiltros();
+    render();
+  }
+}
+
+// Inicializar — primero intenta Monday.com, luego Excel, luego manual
+cargarDesdeMondayAPI();
+</script>
+</body>
+</html>

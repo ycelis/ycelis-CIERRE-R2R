@@ -1,0 +1,54 @@
+name: Sync Monday Data and Deploy to GitHub Pages
+
+on:
+  schedule:
+    # Sincronización automática cada 15 minutos de lunes a viernes
+    - cron: '*/15 * * * 1-5'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch Live Data from Monday.com (Using Protected Secret)
+        env:
+          MONDAY_TOKEN: ${{ secrets.MONDAY_TOKEN }}
+          MONDAY_BOARD_ID: "18432754378"
+        run: |
+          node server/sync.js
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

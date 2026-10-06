@@ -1,0 +1,23 @@
+{
+  "name": "r2r-closing-dashboard",
+  "version": "1.0.0",
+  "description": "Centro de Operaciones de Cierre Contable RTR México & SCAC con integración Monday.com",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "keywords": [
+    "r2r",
+    "accounting-close",
+    "dashboard",
+    "monday-api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
