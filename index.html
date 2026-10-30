@@ -232,6 +232,7 @@ footer{margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;text-align:
     <span class="file-status" id="file-status"></span>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
+    <button class="btn btn-out" style="padding:4px 10px;font-size:11px" id="btn-token" onclick="configurarTokenMonday()">🔑 Token Monday</button>
     <button class="btn btn-out" style="padding:4px 10px;font-size:11px" id="btn-recargar" onclick="cargarDesdeMondayAPI()">🔄 Recargar</button>
   </div>
   <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none">
@@ -1788,10 +1789,120 @@ function renderDiaBars(vis) {
 
 const MONDAY_TL_BOARD_ID = "18432801726";
 const LEADER_DATA = {};   // nombre ítem → { comment, mondayId, colComment, groupType }
+const _leaderDirty = new Set();   // nombres con cambios locales aún no guardados en Monday
+let _leaderPollTimer = null;
+
+// Conserva el texto local solo de textareas en edición / pendientes de guardar
+function _keepLocalLeaderText(root) {
+  root.querySelectorAll(".leader-textarea").forEach(ta => {
+    const n = ta.dataset.leaderName;
+    if (n && LEADER_DATA[n] && (_leaderDirty.has(n) || ta === document.activeElement)) {
+      LEADER_DATA[n].comment = ta.value;
+    }
+  });
+}
+
+// Refresco liviano: consulta solo la columna de comentarios de cada líder y actualiza
+// en sitio las cajas que no tengan cambios locales sin guardar (no vuelve a pintar las tarjetas).
+let _leaderRefrescando = false;
+async function _refrescarComentariosLideres() {
+  if (_leaderRefrescando) return;
+  const token = getMondayToken();
+  const personas = [...PERSONAS_TL, ...PERSONAS_MANAGER].filter(n => LEADER_DATA[n]?.mondayId && LEADER_DATA[n]?.colComment);
+  if (!token || !personas.length) return;
+  _leaderRefrescando = true;
+  try {
+    const ids = [...new Set(personas.map(n => LEADER_DATA[n].mondayId))];
+    const cols = [...new Set(personas.map(n => LEADER_DATA[n].colComment))];
+    const query = `{ items(ids: [${ids.join(",")}]) { id column_values(ids: ${JSON.stringify(cols)}) { id text } } }`;
+    const res = await fetch(MONDAY_API_URL, {
+      method: "POST",
+      headers: { "Content-Type":"application/json","Authorization":token,"API-Version":"2024-01" },
+      body: JSON.stringify({ query })
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json.errors?.length) { console.warn("[LeaderBoard] refresco:", json.errors[0].message); return; }
+    const porItem = {};
+    (json.data?.items || []).forEach(it => { porItem[it.id] = it.column_values || []; });
+
+    personas.forEach(name => {
+      const d = LEADER_DATA[name];
+      const cv = (porItem[d.mondayId] || []).find(c => c.id === d.colComment);
+      if (!cv) return;
+      const remoto = (cv.text || "").trim();
+      if (_leaderDirty.has(name)) return;               // hay texto local sin guardar: no pisar
+      if ((d.comment || "") === remoto) return;          // sin cambios
+      d.comment = remoto;
+      _guardarCacheLideres();
+      document.querySelectorAll(".leader-textarea").forEach(ta => {
+        if (ta.dataset.leaderName !== name || ta.value === remoto) return;
+        ta.value = remoto;
+        const isB = ["bloqueante","bloqueo","blocker"].some(k => remoto.toLowerCase().includes(k));
+        ta.classList.toggle("has-blocker", isB);
+        const tag = ta.nextElementSibling;
+        if (tag?.classList.contains("leader-blocker-tag")) tag.classList.toggle("visible", isB);
+      });
+    });
+  } catch(e) {
+    console.warn("[LeaderBoard] refresco:", e.message);
+  } finally {
+    _leaderRefrescando = false;
+  }
+}
+
+// Refresco automático cada 5 s (y al volver a la pestaña)
+function _iniciarPollingLeaderBoard() {
+  if (_leaderPollTimer) return;
+  const tick = () => { if (!document.hidden) _refrescarComentariosLideres(); };
+  _leaderPollTimer = setInterval(tick, 5000);
+  document.addEventListener("visibilitychange", tick);
+  window.addEventListener("focus", tick);
+}
 
 // Lista fija de personas — no depende de DATA
 const PERSONAS_TL      = ["Ivonne Hernandez", "John Pulido", "Luis Forero"];
 const PERSONAS_MANAGER = ["Jhony Fabian Alfonso Filigrana"];
+
+// Copia local del último comentario conocido: se muestra al instante tras F5
+// y luego se reemplaza por lo que haya en Monday.
+const _LEADER_CACHE_KEY = "r2r_leader_comments_v1";
+function _guardarCacheLideres() {
+  try {
+    const o = {};
+    [...PERSONAS_TL, ...PERSONAS_MANAGER].forEach(n => { if (LEADER_DATA[n]) o[n] = LEADER_DATA[n].comment || ""; });
+    localStorage.setItem(_LEADER_CACHE_KEY, JSON.stringify(o));
+  } catch(e) {}
+}
+(function _cargarCacheLideres() {
+  try {
+    const o = JSON.parse(localStorage.getItem(_LEADER_CACHE_KEY) || "{}");
+    Object.keys(o).forEach(n => {
+      if (!LEADER_DATA[n]) LEADER_DATA[n] = { comment: o[n] || "", mondayId: null, colComment: null };
+    });
+  } catch(e) {}
+})();
+
+// Al recargar (F5) o cerrar la pestaña, envía a Monday lo que aún no se haya guardado
+function _guardarPendientesAlSalir() {
+  const token = getMondayToken();
+  if (!token) return;
+  _leaderDirty.forEach(name => {
+    const d = LEADER_DATA[name];
+    const ta = [...document.querySelectorAll(".leader-textarea")].find(x => x.dataset.leaderName === name);
+    if (!d?.mondayId || !d?.colComment || !ta) return;
+    const mutation = `mutation { change_simple_column_value(item_id: "${d.mondayId}", board_id: "${MONDAY_TL_BOARD_ID}", column_id: "${d.colComment}", value: ${JSON.stringify(ta.value)}) { id } }`;
+    try {
+      fetch(MONDAY_API_URL, {
+        method: "POST", keepalive: true,
+        headers: { "Content-Type":"application/json","Authorization":token,"API-Version":"2024-01" },
+        body: JSON.stringify({ query: mutation })
+      });
+    } catch(e) {}
+  });
+}
+window.addEventListener("pagehide", _guardarPendientesAlSalir);
+window.addEventListener("beforeunload", _guardarPendientesAlSalir);
 
 // ── Escritura bidireccional hacia Monday ─────────────────────────────────────
 async function writeMondayLeaderCell(mondayId, columnId, value, iconEl) {
@@ -1835,7 +1946,7 @@ async function cargarLeaderBoard() {
           items_page(limit: 100) {
             items {
               id name
-              column_values { id text column { title } }
+              column_values { id text type column { title } }
             }
           }
         }
@@ -1846,11 +1957,19 @@ async function cargarLeaderBoard() {
       headers: { "Content-Type":"application/json","Authorization":token,"API-Version":"2024-01" },
       body: JSON.stringify({ query })
     });
-    if (!res.ok) return;
+    if (!res.ok) { console.warn("[LeaderBoard] HTTP", res.status, "al leer comentarios de Monday"); return; }
     const json = await res.json();
-    if (json.errors?.length) return;
+    if (json.errors?.length) { console.warn("[LeaderBoard] error de Monday:", json.errors[0].message); return; }
 
     const groups = json.data?.boards?.[0]?.groups || [];
+    // Función normalizadora: quita tildes, minúsculas, espacios extra
+    function _norm(s) {
+      return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+    }
+
+    // Mapa temporal: nombre-normalizado → datos del ítem
+    const byNormName = {};
+
     groups.forEach(group => {
       // Determinar tipo por nombre del grupo (insensible a mayúsculas/tildes)
       const gNorm = group.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -1860,21 +1979,59 @@ async function cargarLeaderBoard() {
         const name = item.name.trim();
         const cv   = item.column_values || [];
         const comment = colText(cv,"Comentarios","Comentario TL","Comentario","Comment TL","Comment","comentario");
-        const colComment = cv.find(c => c.column &&
-          ["Comentarios","Comentario TL","Comentario","Comment TL","Comment","comentario"]
-            .some(k => c.column.title.toLowerCase() === k.toLowerCase()))?.id || null;
+        const colComment = (
+          cv.find(c => c.column &&
+            ["Comentarios","Comentario TL","Comentario","Comment TL","Comment","comentario"]
+              .some(k => c.column.title.trim().toLowerCase() === k.toLowerCase())) ||
+          cv.find(c => c.column && /coment|comment/i.test(c.column.title)) ||
+          cv.find(c => c.type === "long_text" || c.type === "long-text") ||
+          cv.find(c => c.type === "text")
+        )?.id || null;
+        if (!colComment) console.warn("[LeaderBoard] sin columna de comentario para:", name);
 
-        LEADER_DATA[name] = {
+        const payload = {
           comment:    comment.trim(),
           mondayId:   item.id,
           colComment,
           groupType,
           groupTitle: group.title,
         };
+
+        // Guardar por nombre exacto Y por nombre normalizado para matching flexible
+        LEADER_DATA[name] = payload;
+        byNormName[_norm(name)] = payload;
+
+        // Log de diagnóstico para ver qué nombres llegaron desde Monday
+        console.log("[LeaderBoard] ítem encontrado:", JSON.stringify(name), "| grupo:", group.title, "| comentario:", comment.trim() || "(vacío)");
       });
     });
 
+    // Segunda pasada: asegurar que PERSONAS_TL y PERSONAS_MANAGER encuentren sus datos
+    // aunque el nombre en Monday tenga tildes/capitalización diferente
+    const todasLasPersonas = [...PERSONAS_TL, ...PERSONAS_MANAGER];
+    todasLasPersonas.forEach(persona => {
+      if (LEADER_DATA[persona]?.mondayId) return; // ya tiene datos exactos
+      const normPersona = _norm(persona);
+      const match = byNormName[normPersona];
+      if (match) {
+        LEADER_DATA[persona] = match;
+        console.log("[LeaderBoard] match por normalización:", persona, "→", JSON.stringify(Object.keys(byNormName).find(k => k === normPersona)));
+      } else {
+        // Búsqueda parcial: si el nombre de Monday contiene el apellido de la persona
+        const apellido = normPersona.split(" ").pop();
+        const matchParcial = Object.entries(byNormName).find(([k]) => k.includes(apellido));
+        if (matchParcial) {
+          LEADER_DATA[persona] = matchParcial[1];
+          console.log("[LeaderBoard] match parcial por apellido:", persona, "→", matchParcial[0]);
+        } else {
+          console.warn("[LeaderBoard] SIN MATCH para:", persona, "| nombres disponibles:", Object.keys(byNormName));
+        }
+      }
+    });
+
+    _guardarCacheLideres();
     renderLeaderComments();
+    _iniciarPollingLeaderBoard();
   } catch(e) {
     console.warn("cargarLeaderBoard:", e.message);
   }
@@ -1910,21 +2067,33 @@ function _makeLeaderCard({ name, data, color, badgeHtml, syncId, containerId }) 
 // ── Helper: adjunta listener de escritura a un textarea de comentario ─────────
 function _attachLeaderListener(ta, syncIdFn) {
   let debTimer;
+  const guardar = async () => {
+    clearTimeout(debTimer);
+    const name = ta.dataset.leaderName;
+    const d = LEADER_DATA[name];
+    if (!_leaderDirty.has(name)) return;
+    if (d?.mondayId && d?.colComment) {
+      const icon = document.getElementById(syncIdFn(name));
+      const enviado = ta.value;
+      await writeMondayLeaderCell(d.mondayId, d.colComment, enviado, icon);
+      if (ta.value === enviado) _leaderDirty.delete(name);
+    } else {
+      console.warn("[LeaderBoard] no se puede guardar, falta mondayId/columna para:", name);
+      _leaderDirty.delete(name);
+    }
+  };
+  ta.addEventListener("blur", guardar);
   ta.addEventListener("input", function() {
     const name = this.dataset.leaderName;
+    _leaderDirty.add(name);
     if (LEADER_DATA[name]) LEADER_DATA[name].comment = this.value;
+    _guardarCacheLideres();
     const isB = ["bloqueante","bloqueo","blocker"].some(k => this.value.toLowerCase().includes(k));
     this.classList.toggle("has-blocker", isB);
     const tag = this.nextElementSibling;
     if (tag?.classList.contains("leader-blocker-tag")) tag.classList.toggle("visible", isB);
     clearTimeout(debTimer);
-    debTimer = setTimeout(() => {
-      const d = LEADER_DATA[name];
-      if (d?.mondayId && d?.colComment) {
-        const icon = document.getElementById(syncIdFn(name));
-        writeMondayLeaderCell(d.mondayId, d.colComment, this.value, icon);
-      }
-    }, 800);
+    debTimer = setTimeout(guardar, 800);
   });
 }
 
@@ -1933,11 +2102,8 @@ function renderManagerCard() {
   const container = document.getElementById("manager-card-container");
   if (!container) return;
 
-  // Preservar texto local antes de re-renderizar
-  container.querySelectorAll(".leader-textarea").forEach(ta => {
-    const n = ta.dataset.leaderName;
-    if (n && LEADER_DATA[n]) LEADER_DATA[n].comment = ta.value;
-  });
+  // Preservar solo texto local en edición / pendiente de guardar
+  _keepLocalLeaderText(container);
 
   const colors = ["#003366","#3b82d4","#7c5cd8"];
   container.innerHTML = PERSONAS_MANAGER.map((name, idx) => {
@@ -1962,11 +2128,8 @@ function renderLeaderComments() {
   const grid = document.getElementById("leader-comments-grid");
   if (!grid) return;
 
-  // Preservar texto local antes de re-renderizar
-  grid.querySelectorAll(".leader-textarea").forEach(ta => {
-    const n = ta.dataset.leaderName;
-    if (n && LEADER_DATA[n]) LEADER_DATA[n].comment = ta.value;
-  });
+  // Preservar solo texto local en edición / pendiente de guardar
+  _keepLocalLeaderText(grid);
 
   const colors = ["#7c5cd8","#3b82d4","#28a745","#e6a800","#dc3545","#003366"];
   grid.innerHTML = PERSONAS_TL.map((name, idx) => {
@@ -2423,8 +2586,8 @@ async function ejecutarNuevoMes() {
     if (jsonIt.errors?.length) throw new Error(jsonIt.errors[0].message);
     const itemsFuente = jsonIt.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
 
-    // Columnas que deben quedar en blanco
-    const COLS_BLANK = new Set(["estatus entregable","estatus cierre"]);
+    // Columnas que deben quedar en blanco ("Estatus Entregable" se conserva: es fijo y se copia del mes fuente)
+    const COLS_BLANK = new Set(["estatus cierre"]);
 
     // 3. Crear cada ítem copiando todos los campos excepto los blancos
     // Convierte cv.value (JSON raw de Monday) al formato que acepta create_item
@@ -2603,15 +2766,21 @@ document.getElementById("btn-lang").addEventListener("click", () => {
 const MONDAY_BOARD_ID = "18432754378";
 const MONDAY_API_URL  = "https://api.monday.com/v2";
 
-// Clave autorizada para interactuar en tiempo real con Monday.com
-const MON_KEY_AUTH = [
-  "eyJhbGciOiJIUzI1NiJ9",
-  "eyJ0aWQiOjcwODYzNzc0NSwiYWFpIjoxMSwidWlkIjo1NDU2ODM2NywiaWFkIjoiMjAyNi0wOS0yOVQwMTo0Mzo0NC4yMDdaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTM1MzY5ODEsInJnbiI6InVzZTEifQ",
-  "k47gcDOK1VFkNgFKqKgvyqe9KHRvMHHnY6tosTJh_6A"
-].join(".");
-
+// El token de Monday NO va en el código: cada persona lo ingresa una vez y queda solo en su navegador.
 function getMondayToken() {
-  return localStorage.getItem("monday_token") || MON_KEY_AUTH;
+  return (localStorage.getItem("monday_token") || "").trim();
+}
+function configurarTokenMonday() {
+  const actual = getMondayToken();
+  const nuevo = prompt(
+    "Pega tu token personal de Monday.com (Monday → Avatar → Developers → My access tokens).\n" +
+    "Se guarda solo en este navegador. Déjalo vacío para borrar el guardado.",
+    actual
+  );
+  if (nuevo === null) return;
+  const v = nuevo.trim();
+  if (v) localStorage.setItem("monday_token", v); else localStorage.removeItem("monday_token");
+  location.reload();
 }
 function getMondayBoardId() {
   return localStorage.getItem("monday_board_id") || MONDAY_BOARD_ID;
@@ -2869,6 +3038,7 @@ async function autoCargarDesdeRepo(silencioso = false) {
     DATA = nuevos;
     reconstruirFiltros();
     render();
+    cargarLeaderBoard();
 
     // Mostrar estado éxito
     descAuto.innerHTML = `✅ Datos cargados desde <code>data/cierre.xlsx</code> — <strong>${nuevos.length} actividades</strong>`;
@@ -2887,6 +3057,7 @@ async function autoCargarDesdeRepo(silencioso = false) {
     // Inicializar con datos precargados si no hay nada
     reconstruirFiltros();
     render();
+    cargarLeaderBoard();
   }
 }
 
